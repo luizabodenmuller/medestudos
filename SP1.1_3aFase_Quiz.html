@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 1.1 – Quiz</title>
+<style>
+  :root{ --primary:#7a1f3d; --primary-light:#f0dbe3; --bg:#faf7f8; --green:#2e7d32; --red:#c62828; }
+  *{box-sizing:border-box;}
+  body{ font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); margin:0; padding:20px; color:#222; }
+  .wrap{ max-width:720px; margin:0 auto; }
+  h1{ color:var(--primary); font-size:22px; margin-bottom:2px; }
+  .subtitle{ color:#777; font-size:13px; margin-bottom:18px; }
+  .progress{ font-size:13px; color:#555; font-weight:600; margin-bottom:6px; display:flex; justify-content:space-between; }
+  .progress-bar{ height:8px; background:#eee; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill{ height:100%; background:var(--primary); transition:width .3s; }
+  .qcard{ background:#fff; border-radius:16px; padding:24px; box-shadow:0 6px 18px rgba(0,0,0,.08); border:2px solid var(--primary-light); }
+  .qtext{ font-size:17px; font-weight:600; margin-bottom:18px; line-height:1.4; }
+  .opt{ display:block; width:100%; text-align:left; padding:12px 16px; margin-bottom:10px; border-radius:10px; border:2px solid #e2c8d3; background:#fff; font-size:14.5px; cursor:pointer; transition:.15s; }
+  .opt:hover:not(.disabled){ background:var(--primary-light); }
+  .opt.correct{ background:#e8f5e9; border-color:var(--green); color:var(--green); font-weight:600; }
+  .opt.incorrect{ background:#fdecea; border-color:var(--red); color:var(--red); font-weight:600; }
+  .opt.disabled{ cursor:default; }
+  .feedback{ margin-top:14px; padding:12px 16px; border-radius:10px; font-size:13.8px; line-height:1.45; display:none; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background:#e8f5e9; color:#1b5e20; }
+  .feedback.no{ background:#fdecea; color:#8e1a1a; }
+  .nextBtn{ margin-top:16px; background:var(--primary); color:#fff; border:none; padding:11px 22px; border-radius:10px; font-size:14.5px; font-weight:600; cursor:pointer; display:none; }
+  .nextBtn.show{ display:inline-block; }
+  .result{ text-align:center; padding:30px 20px; }
+  .result h2{ color:var(--primary); font-size:26px; }
+  .score-circle{ width:140px; height:140px; border-radius:50%; border:8px solid var(--primary); display:flex; align-items:center; justify-content:center; margin:20px auto; font-size:30px; font-weight:700; color:var(--primary); }
+  .restartBtn{ margin-top:10px; background:var(--primary); color:#fff; border:none; padding:12px 26px; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+  .msg{ font-size:15px; color:#555; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📝 SP 1.1 – Primeira gestação, primeiros desafios</h1>
+  <div class="subtitle">Quiz de revisão — 3ª Fase</div>
+
+  <div id="quizArea">
+    <div class="progress">
+      <span id="qCounter">Questão 1 / 24</span>
+      <span id="scoreLive">Acertos: 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="qcard">
+      <div class="qtext" id="qtext"></div>
+      <div id="optsContainer"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nextBtn" id="nextBtn">Próxima questão ▶</button>
+    </div>
+  </div>
+
+  <div id="resultArea" style="display:none;">
+    <div class="qcard result">
+      <h2>Quiz concluído!</h2>
+      <div class="score-circle" id="scoreCircle"></div>
+      <div class="msg" id="finalMsg"></div>
+      <button class="restartBtn" id="restartBtn">🔄 Refazer quiz</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const QUIZ = [
+{
+  q:"Qual o objetivo do modelo de pré-natal de baixo risco recomendado na fonte?",
+  opts:["Deve ser conduzido exclusivamente por obstetras","Deve ser oferecido por médicos generalistas, sem necessidade de acompanhamento rotineiro por obstetras","Deve ser feito somente por enfermeiros obstetras","Deve sempre incluir amniocentese de rotina"],
+  correct:1,
+  exp:"O modelo de baixo risco por médicos generalistas deve ser oferecido às gestantes; o acompanhamento rotineiro por obstetras não traz melhoria aos desfechos perinatais comparado ao encaminhamento em casos de complicação."
+},
+{
+  q:"Aproximadamente que percentual das gestações é encaminhado ao pré-natal de alto risco?",
+  opts:["1%","5%","10%","25%"],
+  correct:2,
+  exp:"O pré-natal de alto risco abrange cerca de 10% das gestações que cursam com critérios de risco."
+},
+{
+  q:"Qual valor de β-hCG é considerado positivo do ponto de vista prático, segundo a fonte?",
+  opts:["Acima de 5 mUI/ml","Acima de 25 mUI/ml","Acima de 50 mUI/ml","Acima de 100 mUI/ml"],
+  correct:1,
+  exp:"Níveis menores que 5 mUI/ml são considerados negativos e acima de 25 mUI/ml são considerados positivos."
+},
+{
+  q:"O rastreamento combinado do 1º trimestre (translucência nucal + PAPP-A + β-hCG) tem taxa de detecção de aneuploidias de:",
+  opts:["50 a 60%","70 a 75%","85 a 87%","95 a 99%"],
+  correct:2,
+  exp:"A taxa de detecção está entre 85 e 87%, com taxa de falso-positivos menor que 5%."
+},
+{
+  q:"Em gestante diabética, qual nível de HbA1C na concepção/organogênese reduz o risco de malformações fetais?",
+  opts:["Abaixo de 6%","Abaixo de 8%","Abaixo de 10%","Abaixo de 12%"],
+  correct:0,
+  exp:"Níveis de HbA1C abaixo de 6% no momento da concepção e durante a organogênese reduzem o risco de malformações fetais."
+},
+{
+  q:"Quais anti-hipertensivos devem ser evitados na gestação, sendo substituídos por pindolol ou metildopa?",
+  opts:["Betabloqueadores","Bloqueadores de canal de cálcio","IECA e diuréticos","Vasodilatadores diretos"],
+  correct:2,
+  exp:"O uso de inibidores da enzima conversora de angiotensina e diuréticos deve ser evitado na gestação, substituindo-se por pindolol ou metildopa."
+},
+{
+  q:"Qual a taxa de transmissão vertical do Streptococcus agalactiae ao recém-nascido na primeira hora de vida quando a mãe tem cultura positiva?",
+  opts:["Até 10%","Até 25%","Até 50%","Até 90%"],
+  correct:2,
+  exp:"A transmissão vertical chega a 50% nos recém-nascidos na primeira hora de vida quando a gestante apresenta cultura vaginal ou anal positiva."
+},
+{
+  q:"Entre que semanas é geralmente realizada a biópsia de vilosidade coriônica (BVC)?",
+  opts:["6 a 9 semanas","10 a 13 semanas","15 a 20 semanas","A partir de 18 semanas"],
+  correct:1,
+  exp:"A BVC é realizada geralmente entre 10 e 13 semanas (11 a 14 semanas também aparece na literatura)."
+},
+{
+  q:"A que se relaciona a translucência nucal aumentada, segundo a fonte?",
+  opts:["Restrição de crescimento fetal isolada","Prevalência de síndrome de Down","Placenta prévia","Diabetes gestacional"],
+  correct:1,
+  exp:"A translucência nucal identifica acúmulo de fluido na nuca fetal, relacionando-se com a prevalência de síndrome de Down."
+},
+{
+  q:"Segundo a fonte, o que é um 'hadégeno'?",
+  opts:["Agente que causa apenas anormalidades estruturais","Agente que interfere na maturação e função dos órgãos","Agente que altera exclusivamente o crescimento fetal","Sinônimo exato de teratógeno"],
+  correct:1,
+  exp:"Um hadégeno (termo relacionado ao deus Hades) é um agente que interfere na maturação e função dos órgãos, enquanto um trofógeno altera o crescimento."
+},
+{
+  q:"Qual o período do desenvolvimento embrionário considerado 'tudo ou nada'?",
+  opts:["Período fetal","Período embrionário (2ª a 8ª semana)","Período pré-implantação (até 2 semanas)","Período da organogênese"],
+  correct:2,
+  exp:"O período pré-implantação dura 2 semanas desde a fecundação até a implantação, sendo chamado de período do 'tudo ou nada'."
+},
+{
+  q:"Qual o risco de infecção congênita quando a mãe tem rubéola nas primeiras 12 semanas de gestação?",
+  opts:["Até 25%","Até 50%","Até 90%","100% dos casos"],
+  correct:2,
+  exp:"Gestantes com rubéola e exantema nas primeiras 12 semanas têm feto afetado com infecção congênita em até 90% dos casos."
+},
+{
+  q:"Como é adquirida a infecção humana por Toxoplasma gondii, segundo a fonte?",
+  opts:["Apenas por transmissão sexual","Ingestão de carne crua/malpassada ou contato com oocistos de fezes de gato","Somente por picada de mosquito","Exclusivamente por transfusão sanguínea"],
+  correct:1,
+  exp:"A infecção humana é adquirida pela ingestão de carne crua ou malpassada infectada com cistos ou por contato com oocistos de fezes de gato em água/solo/lixo contaminados."
+},
+{
+  q:"Qual é a tríade clássica da toxoplasmose congênita?",
+  opts:["Microcefalia, surdez e catarata","Coriorretinite, calcificações intracranianas e hidrocefalia","Cardiopatia, hepatoesplenomegalia e icterícia","Convulsões, anemia e baixo peso"],
+  correct:1,
+  exp:"Esta tríade clássica – coriorretinite, calcificações intracranianas e hidrocefalia – é muitas vezes acompanhada por convulsões."
+},
+{
+  q:"Segundo Honein e colaboradores (2017), qual a taxa global de infecção fetal por Zika?",
+  opts:["1%","6%","15%","30%"],
+  correct:1,
+  exp:"Honein e colaboradores (2017) descrevem uma taxa global de infecção fetal de 6%."
+},
+{
+  q:"Qual o risco de morte fetal associado à síndrome alcoólica fetal, segundo a fonte?",
+  opts:["Até 5%","Até 17%","Até 40%","Até 60%"],
+  correct:1,
+  exp:"A síndrome alcoólica fetal é condição extremamente grave, com risco de morte fetal em até 17% das vezes."
+},
+{
+  q:"Qual a prevalência global do transtorno do espectro alcoólico fetal citada no trecho em inglês da fonte?",
+  opts:["0,07%","0,77%","7,7%","17%"],
+  correct:1,
+  exp:"'The prevalence of fetal alcohol spectrum disorder in the global population is 0.77%.'"
+},
+{
+  q:"Em que percentual dos casos a etiologia da prematuridade permanece não esclarecida?",
+  opts:["Cerca de 10%","Cerca de 25%","Cerca de 40%","Cerca de 60%"],
+  correct:2,
+  exp:"Ressalta-se que, em cerca de 40% dos casos, a etiologia da prematuridade permanece como não esclarecida."
+},
+{
+  q:"Qual comprimento de colo uterino (canal cervical) indica maior risco de parto pré-termo?",
+  opts:["≤ 15 mm","≤ 25 mm","≤ 35 mm","≤ 45 mm"],
+  correct:1,
+  exp:"O comprimento do canal cervical ≤25 mm indica maior risco de parto pré-termo; quanto mais curto o colo, maior o risco."
+},
+{
+  q:"Se o parto anterior ocorreu antes de 32 semanas, qual o risco do próximo parto ser prematuro?",
+  opts:["10%","17%","35%","50%"],
+  correct:2,
+  exp:"Quando se considera o parto anterior antes de 32 semanas gestacionais, o risco se eleva para 35%."
+},
+{
+  q:"Segundo a OMS, qual a faixa etária considerada adolescência?",
+  opts:["10 a 15 anos","10 a 19 anos","12 a 18 anos","15 a 21 anos"],
+  correct:1,
+  exp:"Considera-se adolescência, segundo a Organização Mundial da Saúde, o período de 10 a 19 anos de idade."
+},
+{
+  q:"Como é definida a Restrição do Crescimento Intrauterino (RCIU) quanto ao peso fetal estimado?",
+  opts:["Peso fetal estimado no 3º percentil ou abaixo","Peso fetal estimado no 10º percentil ou abaixo","Peso fetal estimado no 25º percentil ou abaixo","Peso fetal estimado no 50º percentil ou abaixo"],
+  correct:1,
+  exp:"A RCIU é definida como peso fetal estimado (PFE) no 10º percentil ou abaixo para a idade gestacional."
+},
+{
+  q:"Qual mecanismo caracteriza a RCIU assimétrica?",
+  opts:["Diminuição proporcional de todos os órgãos","Redistribuição de fluxo para cérebro e coração à custa de fígado e rins","Aumento do número de células cerebrais","Ausência de qualquer alteração de órgãos"],
+  correct:1,
+  exp:"RCIU assimétrica mais provavelmente é causada por privação intrauterina que resulta em redistribuição de fluxo para o cérebro e o coração à custa de órgãos como o fígado e os rins."
+},
+{
+  q:"A RCIU é responsável por qual percentual de todos os casos de síndrome da morte súbita do lactente (SMSL)?",
+  opts:["10%","20%","30%","50%"],
+  correct:2,
+  exp:"A incidência de SMSL é aumentada em bebês com RCIU, que é responsável por 30% de todos os casos de SMSL."
+},
+];
+
+</script>
+<script>
+let current = 0;
+let score = 0;
+let answered = false;
+
+const qtext = document.getElementById('qtext');
+const optsContainer = document.getElementById('optsContainer');
+const feedback = document.getElementById('feedback');
+const nextBtn = document.getElementById('nextBtn');
+const qCounter = document.getElementById('qCounter');
+const scoreLive = document.getElementById('scoreLive');
+const progressFill = document.getElementById('progressFill');
+const quizArea = document.getElementById('quizArea');
+const resultArea = document.getElementById('resultArea');
+
+function renderQuestion(){
+  answered = false;
+  const item = QUIZ[current];
+  qtext.textContent = `${current+1}. ${item.q}`;
+  optsContainer.innerHTML = '';
+  item.opts.forEach((opt, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.textContent = opt;
+    btn.addEventListener('click', ()=>selectAnswer(idx));
+    optsContainer.appendChild(btn);
+  });
+  feedback.className = 'feedback';
+  feedback.textContent = '';
+  nextBtn.classList.remove('show');
+  qCounter.textContent = `Questão ${current+1} / ${QUIZ.length}`;
+  scoreLive.textContent = `Acertos: ${score}`;
+  progressFill.style.width = `${(current/QUIZ.length)*100}%`;
+}
+
+function selectAnswer(idx){
+  if(answered) return;
+  answered = true;
+  const item = QUIZ[current];
+  const opts = optsContainer.querySelectorAll('.opt');
+  opts.forEach((b,i)=>{
+    b.classList.add('disabled');
+    if(i === item.correct) b.classList.add('correct');
+    else if(i === idx) b.classList.add('incorrect');
+  });
+  if(idx === item.correct){
+    score++;
+    feedback.className = 'feedback show ok';
+    feedback.textContent = `✅ Correto! ${item.exp}`;
+  } else {
+    feedback.className = 'feedback show no';
+    feedback.textContent = `❌ Incorreto. ${item.exp}`;
+  }
+  scoreLive.textContent = `Acertos: ${score}`;
+  nextBtn.classList.add('show');
+}
+
+nextBtn.addEventListener('click', ()=>{
+  current++;
+  if(current < QUIZ.length){
+    renderQuestion();
+  } else {
+    showResult();
+  }
+});
+
+function showResult(){
+  quizArea.style.display = 'none';
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/QUIZ.length)*100);
+  document.getElementById('scoreCircle').textContent = `${score}/${QUIZ.length}`;
+  let msg = '';
+  if(pct >= 85) msg = `${pct}% de acertos — excelente domínio do conteúdo da SP! 🎉`;
+  else if(pct >= 60) msg = `${pct}% de acertos — bom resultado, revise os pontos que errou.`;
+  else msg = `${pct}% de acertos — vale a pena revisar o resumo e os flashcards desta SP.`;
+  document.getElementById('finalMsg').textContent = msg;
+}
+
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  current = 0; score = 0;
+  quizArea.style.display = 'block';
+  resultArea.style.display = 'none';
+  renderQuestion();
+});
+
+renderQuestion();
+</script>
+</body>
+</html>

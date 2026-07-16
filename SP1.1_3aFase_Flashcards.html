@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 1.1 – Flashcards</title>
+<style>
+  :root{ --primary:#7a1f3d; --primary-light:#f0dbe3; --bg:#faf7f8; }
+  *{box-sizing:border-box;}
+  body{ font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); margin:0; padding:20px; color:#222; }
+  .wrap{ max-width:760px; margin:0 auto; }
+  h1{ color:var(--primary); font-size:22px; margin-bottom:2px; }
+  .subtitle{ color:#777; font-size:13px; margin-bottom:18px; }
+  .controls{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center; justify-content:space-between; }
+  select{ padding:8px 10px; border-radius:8px; border:1px solid #ddd; font-size:13px; background:#fff; }
+  .progress{ font-size:13px; color:#555; font-weight:600; }
+  .progress-bar{ height:6px; background:#eee; border-radius:4px; overflow:hidden; margin-bottom:18px; }
+  .progress-fill{ height:100%; background:var(--primary); transition:width .25s; }
+  .card-container{ perspective:1400px; height:320px; margin-bottom:20px; }
+  .card{ position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card.flipped{ transform:rotateY(180deg); }
+  .face{ position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:16px; padding:26px; display:flex; flex-direction:column; box-shadow:0 6px 18px rgba(0,0,0,.1); }
+  .front{ background:linear-gradient(135deg,#fff,var(--primary-light)); border:2px solid var(--primary); }
+  .back{ background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .cat-tag{ align-self:flex-start; font-size:11px; padding:4px 10px; border-radius:12px; background:var(--primary); color:#fff; margin-bottom:14px; }
+  .back .cat-tag{ background:rgba(255,255,255,.25); }
+  .face .content{ flex:1; display:flex; align-items:center; justify-content:center; text-align:center; font-size:17px; line-height:1.45; overflow-y:auto; }
+  .hint{ text-align:center; font-size:11px; color:#999; margin-top:-8px; margin-bottom:16px; }
+  .back .hint{ color:rgba(255,255,255,.6); }
+  .nav-buttons{ display:flex; gap:10px; justify-content:center; }
+  button.nav{ background:#fff; border:2px solid var(--primary); color:var(--primary); font-size:15px; font-weight:600; padding:10px 22px; border-radius:10px; cursor:pointer; transition:.15s; }
+  button.nav:hover{ background:var(--primary); color:#fff; }
+  button.nav:disabled{ opacity:.35; cursor:default; }
+  button.nav:disabled:hover{ background:#fff; color:var(--primary); }
+  .shuffle-btn{ background:var(--primary); color:#fff; border:none; padding:9px 16px; border-radius:8px; font-size:13px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🃏 SP 1.1 – Primeira gestação, primeiros desafios</h1>
+  <div class="subtitle">Flashcards de revisão — 3ª Fase | Clique no cartão para virar</div>
+
+  <div class="controls">
+    <select id="catFilter"></select>
+    <button class="shuffle-btn" id="shuffleBtn">🔀 Embaralhar</button>
+    <div class="progress" id="progressText">1 / 1</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="card-container">
+    <div class="card" id="card">
+      <div class="face front">
+        <span class="cat-tag" id="catTagFront"></span>
+        <div class="content" id="frontText"></div>
+      </div>
+      <div class="face back">
+        <span class="cat-tag" id="catTagBack">RESPOSTA</span>
+        <div class="content" id="backText"></div>
+      </div>
+    </div>
+  </div>
+  <div class="hint">clique no cartão para ver a resposta</div>
+
+  <div class="nav-buttons">
+    <button class="nav" id="prevBtn">◀ Anterior</button>
+    <button class="nav" id="nextBtn">Próximo ▶</button>
+  </div>
+</div>
+
+<script>
+const CARDS = [
+// ---- Caso Clínico ----
+{cat:"Caso Clínico", f:"Qual a idade e situação de Ana Clara no caso clínico?", b:"16 anos, estudante do ensino médio, primeira gestação, atraso menstrual de 8 semanas."},
+{cat:"Caso Clínico", f:"Quais os achados do exame físico de Ana Clara?", b:"PA 100/60 mmHg, FC 84 bpm, IMC 19 kg/m²."},
+{cat:"Caso Clínico", f:"Quais exames laboratoriais foram solicitados no caso?", b:"Hemograma, glicemia, sorologias para HIV, sífilis, hepatites e toxoplasmose, além de USG obstétrica."},
+{cat:"Caso Clínico", f:"Qual suplementação foi orientada para Ana Clara?", b:"Ácido fólico e cálcio."},
+
+// ---- QA1: Pré-natal e fatores de risco ----
+{cat:"Pré-natal", f:"Qual o objetivo do acompanhamento pré-natal?", b:"Assegurar o desenvolvimento da gestação, permitindo parto de RN saudável sem impacto para a saúde materna, incluindo aspectos psicossociais e atividades educativas/preventivas."},
+{cat:"Pré-natal", f:"Quem está habilitado a atender pré-natal, parto normal sem distócia e puerpério além do médico?", b:"Enfermeiros e enfermeiros obstetras (estes últimos titulados especialistas em obstetrícia)."},
+{cat:"Pré-natal", f:"Que percentual das gestações é abrangido pelo pré-natal de alto risco?", b:"Cerca de 10% das gestações."},
+{cat:"Pré-natal", f:"Cite três fatores individuais/sociodemográficos que indicam pré-natal na atenção básica.", b:"Idade <15 ou >35 anos; baixa escolaridade (<5 anos de estudo); altura <1,45 m (entre outros como IMC alterado e condições ambientais desfavoráveis)."},
+{cat:"Pré-natal", f:"Em que faixa de β-hCG um resultado é considerado negativo e em qual é considerado positivo?", b:"Negativo <5 mUI/ml; positivo >25 mUI/ml (faixa de falso-positivo entre 2 e 25 mUI/ml)."},
+{cat:"Pré-natal", f:"Entre 8 e 11 dias após a concepção, onde o β-hCG pode ser detectado?", b:"No sangue periférico da mulher grávida."},
+{cat:"Pré-natal", f:"Em que percentual das gestações ocorrem complicações que aumentam mortalidade/morbidade materna e/ou fetal?", b:"Entre 5 e 20% das gestações."},
+{cat:"Pré-natal", f:"Qual a taxa de detecção de aneuploidias (trissomias 21, 18 e 13) com o rastreamento combinado do 1º trimestre (translucência nucal + PAPP-A + β-hCG)?", b:"Entre 85 e 87%, com taxa de falso-positivos <5%."},
+{cat:"Pré-natal", f:"Entre quantas semanas deve ser colhida a α-fetoproteína (AFP) sérica materna para rastrear defeitos do tubo neural?", b:"Entre 15 e 18 semanas de gestação."},
+{cat:"Doenças Maternas", f:"Qual meta de HbA1C reduz o risco de malformações fetais em gestante diabética?", b:"Níveis abaixo de 6% no momento da concepção e durante a organogênese."},
+{cat:"Doenças Maternas", f:"Por quais anti-hipertensivos devem ser substituídos os IECA e diuréticos na gestação?", b:"Pindolol ou metildopa."},
+{cat:"Doenças Maternas", f:"Qual a mortalidade materna em gestantes com hipertensão pulmonar primária, segundo a fonte?", b:"Pode atingir 50%."},
+{cat:"Doenças Maternas", f:"Em pacientes com LES, qual condição melhora o sucesso gestacional?", b:"LES quiescente por pelo menos 6 meses antes da gestação e função renal normal ou estável."},
+{cat:"Doenças Maternas", f:"Autoanticorpos anti-Ro e anti-SS em LES estão associados a que complicação fetal/neonatal?", b:"Bloqueio cardíaco completo fetal e neonatal (ocorre em 1 a 2% das gestantes com LES e esses anticorpos)."},
+{cat:"Pré-natal", f:"Qual o risco de malformação da vacina de rubéola aplicada perto da gestação, segundo o risco teórico citado?", b:"Até 2,6% (risco teórico geral, sem evidência observada que associe a vacina a malformações)."},
+{cat:"Pré-natal", f:"Qual o risco de RCF em gestantes tabagistas comparado a não tabagistas?", b:"Aumento de 1,5 a 3,5 vezes."},
+{cat:"Pré-natal", f:"Qual percentual de gestantes suspende o tabagismo antes ou durante a gestação?", b:"Até 46%."},
+{cat:"Pré-natal", f:"Qual a incidência da síndrome fetal do alcoolismo materno entre gestantes com grande ingestão de álcool?", b:"10 a 50%."},
+{cat:"Pré-natal", f:"Consumo de cafeína acima de que valor diário aumenta o risco de abortamento espontâneo?", b:"Acima de 500 mg/dia."},
+{cat:"Pré-natal", f:"Que IMC pré-gestacional caracteriza obesidade materna, associada a maior risco de complicações?", b:"IMC ≥ 30 kg/m²."},
+{cat:"Pré-natal", f:"Que IMC pré-gestacional está associado a maior risco de parto prematuro, baixo peso e anemia materna?", b:"IMC < 20 kg/m²."},
+
+// ---- QA2: Diagnóstico e rastreamento ----
+{cat:"Diagnóstico/Rastreamento", f:"Valores de hemoglobina abaixo de quanto indicam anemia na gravidez?", b:"Abaixo de 11 g/dL."},
+{cat:"Diagnóstico/Rastreamento", f:"Que valor de ferritina é compatível com deficiência de ferro?", b:"Valores abaixo de 30 mcg/L."},
+{cat:"Diagnóstico/Rastreamento", f:"Quais valores de glicemia em jejum no 1º trimestre definem diabetes mellitus gestacional?", b:"Entre 92 e 125 mg/dL."},
+{cat:"Diagnóstico/Rastreamento", f:"Valores de glicemia em jejum ≥126 mg/dL no 1º trimestre indicam o quê?", b:"Diabetes mellitus não diagnosticado previamente à gravidez."},
+{cat:"Diagnóstico/Rastreamento", f:"Que valor de HbA1C confirma diagnóstico de diabetes nesse contexto?", b:"HbA1C > 6,5%."},
+{cat:"Diagnóstico/Rastreamento", f:"Entre 35 e 37 semanas, qual exame de rastreamento deve ser feito?", b:"Pesquisa de colonização vaginal e perianal por Streptococcus agalactiae."},
+{cat:"Diagnóstico/Rastreamento", f:"Qual a taxa de transmissão vertical de Streptococcus agalactiae ao recém-nascido na primeira hora de vida (cultura materna positiva)?", b:"Chega a 50%."},
+{cat:"Diagnóstico/Rastreamento", f:"Entre que semanas é realizada a amniocentese (período padrão)?", b:"Entre 15 e 20 semanas (literatura também cita a partir de 14 semanas)."},
+{cat:"Diagnóstico/Rastreamento", f:"Entre que semanas é geralmente realizada a biópsia de vilosidade coriônica (BVC)?", b:"Entre 10 e 13 semanas (11 a 14 semanas também aparece na literatura)."},
+{cat:"Diagnóstico/Rastreamento", f:"A partir de que semana é realizada a cordoncentese?", b:"A partir de 18 semanas."},
+{cat:"Diagnóstico/Rastreamento", f:"Entre que semanas é medida a translucência nucal?", b:"Entre 11 e 14 semanas."},
+{cat:"Diagnóstico/Rastreamento", f:"Entre que semanas de gestação a PAPP-A pode ser detectada?", b:"Entre 6 e 8 semanas após a última menstruação."},
+{cat:"Diagnóstico/Rastreamento", f:"Em que semanas o hCG/β-hCG atinge seu pico?", b:"Entre a 10ª e a 12ª semanas de gestação."},
+
+// ---- QA3: Teratógenos ----
+{cat:"Teratógenos", f:"Defina teratógeno segundo a fonte.", b:"Qualquer agente que atua durante o desenvolvimento embrionário/fetal causando alteração irreversível da forma ou função."},
+{cat:"Teratógenos", f:"O que é um hadégeno?", b:"Agente que interfere na maturação e função dos órgãos (termo relacionado ao deus Hades)."},
+{cat:"Teratógenos", f:"O que é um trofógeno?", b:"Agente que altera o crescimento."},
+{cat:"Teratógenos", f:"Qual o período chamado de 'tudo ou nada' no desenvolvimento embrionário?", b:"O período pré-implantação, que dura 2 semanas desde a fecundação até a implantação."},
+{cat:"Teratógenos", f:"Qual o período mais crucial para malformações estruturais e por quê?", b:"O período embrionário (2ª a 8ª semana pós-concepção), pois inclui a fase de organogênese."},
+{cat:"Teratógenos", f:"Diferencie malformação de disrupção.", b:"Malformação: defeito de processo de desenvolvimento intrínseco anormal desde a concepção. Disrupção: defeito por fatores extrínsecos ou intrínsecos que interferem em desenvolvimento originalmente normal; não é hereditária."},
+{cat:"Teratógenos", f:"O que é deformação, segundo a fonte?", b:"Forma ou posição anormal de parte do corpo, causada por forças mecânicas durante o desenvolvimento."},
+{cat:"Teratógenos", f:"O que é displasia?", b:"Processo e consequência da histogênese anormal (formação anormal do tecido), sem causa específica, frequentemente afetando vários órgãos."},
+
+// ---- Rubéola ----
+{cat:"Rubéola", f:"Qual a taxa de transmissão da rubéola em indivíduos suscetíveis via secreções nasofaríngeas?", b:"80%."},
+{cat:"Rubéola", f:"Qual o percentual de infecções por rubéola que são assintomáticas na mãe?", b:"25 a 50%."},
+{cat:"Rubéola", f:"Qual o risco de infecção congênita se a mãe tem rubéola nas primeiras 12 semanas de gestação?", b:"Até 90% dos fetos afetados."},
+{cat:"Rubéola", f:"Qual o risco de infecção congênita entre 13 e 14 semanas de gestação?", b:"50%."},
+{cat:"Rubéola", f:"Cite achados clássicos da síndrome da rubéola congênita diagnosticáveis pré-natalmente.", b:"Defeitos de septo cardíaco, estenose pulmonar, microcefalia, catarata, microftalmia e hepatoesplenomegalia."},
+
+// ---- Toxoplasmose ----
+{cat:"Toxoplasmose", f:"Como é adquirida a infecção humana por Toxoplasma gondii?", b:"Ingestão de carne crua ou malpassada com cistos teciduais, ou contato com oocistos de fezes de gato em água/solo contaminados."},
+{cat:"Toxoplasmose", f:"Qual o aumento no risco de parto pré-termo (<37 semanas) associado à infecção materna por toxoplasmose?", b:"Aumento de 4 vezes."},
+{cat:"Toxoplasmose", f:"Qual a tríade clássica da toxoplasmose congênita?", b:"Coriorretinite, calcificações intracranianas e hidrocefalia."},
+{cat:"Toxoplasmose", f:"Qual o risco de infecção fetal por toxoplasmose em gestante infectada aos 26 semanas?", b:"44% (15% em 13 semanas e 71% em 36 semanas)."},
+
+// ---- Zika ----
+{cat:"Zika", f:"A que família pertence o vírus Zika?", b:"Flaviviridae (vírus de RNA)."},
+{cat:"Zika", f:"Qual a taxa global de infecção fetal por Zika, segundo Honein e colaboradores (2017)?", b:"6%."},
+{cat:"Zika", f:"Qual a taxa de defeitos congênitos entre nascidos vivos de mães com infecção confirmada por Zika no 1º trimestre?", b:"15% (vs. 5% entre mulheres com possível infecção)."},
+{cat:"Zika", f:"Cite achados da síndrome congênita do Zika nos fetos mais gravemente afetados.", b:"Microcefalia, lisencefalia, ventriculomegalia, calcificações intracranianas, anormalidades oculares e contraturas congênitas."},
+
+// ---- Síndrome Alcoólica Fetal ----
+{cat:"Síndrome Alcoólica Fetal", f:"Qual o risco de morte fetal associado à síndrome alcoólica fetal?", b:"Até 17% dos casos."},
+{cat:"Síndrome Alcoólica Fetal", f:"Cite anomalias faciais clássicas da síndrome alcoólica fetal.", b:"Microcefalia, fissura palpebral pequena, prega epicantal, hipoplasia maxilar, nariz pequeno com filtro hipoplásico, lábio superior fino."},
+{cat:"Síndrome Alcoólica Fetal", f:"Doses acima de quantos drinques/dia associam-se a risco de 30 a 50% de síndrome alcoólica fetal?", b:"Oito ou mais drinques por dia (60-70 mL de álcool absoluto correspondem a 4-5 drinques, faixa em que a síndrome geralmente ocorre)."},
+{cat:"Síndrome Alcoólica Fetal", f:"Qual a prevalência global do transtorno do espectro alcoólico fetal, segundo o trecho em inglês da fonte?", b:"0,77%."},
+{cat:"Síndrome Alcoólica Fetal", f:"Como é classificado o álcool quanto ao uso na gestação (categoria) e na amamentação?", b:"Categoria X se usado em grande quantidade na gestação; droga S durante a amamentação."},
+
+// ---- Prematuridade ----
+{cat:"Prematuridade", f:"Como é definida a prematuridade quanto à idade gestacional?", b:"Idade gestacional inferior a 37 semanas."},
+{cat:"Prematuridade", f:"Como é definido o prematuro tardio?", b:"De 34 semanas a 36 6/7 semanas."},
+{cat:"Prematuridade", f:"Em que percentual dos casos a etiologia da prematuridade permanece não esclarecida?", b:"Cerca de 40%."},
+{cat:"Prematuridade", f:"Quantos prematuros nascem por ano no mundo, e qual o percentual segundo a OMS?", b:"Cerca de 15 milhões, ou seja, 11% dos nascimentos."},
+{cat:"Prematuridade", f:"Onde se concentram aproximadamente 90% dos nascimentos prematuros no mundo?", b:"Em países pobres ou em desenvolvimento (85% na África e Ásia; 0,9 milhão na América Latina e Caribe)."},
+{cat:"Prematuridade", f:"Em quantas vezes o uso de cocaína pode aumentar a incidência de parto prematuro?", b:"Em até 3 vezes, comparado ao grupo-controle."},
+{cat:"Prematuridade", f:"Em que percentual dos casos de prematuridade a RPMO está presente?", b:"30 a 40%."},
+{cat:"Prematuridade", f:"Que comprimento de colo uterino (canal cervical) indica maior risco de parto pré-termo?", b:"≤ 25 mm."},
+{cat:"Prematuridade", f:"Se o parto anterior foi entre 34 e 36 6/7 semanas, qual o risco do próximo parto ser prematuro?", b:"Aproximadamente 17%."},
+{cat:"Prematuridade", f:"Se o parto anterior ocorreu antes de 32 semanas, qual o risco do próximo parto ser prematuro?", b:"35%."},
+
+// ---- Gravidez na Adolescência ----
+{cat:"Gravidez na Adolescência", f:"Qual a faixa etária considerada adolescência pela OMS?", b:"10 a 19 anos."},
+{cat:"Gravidez na Adolescência", f:"Quais adolescentes apresentam pior resultado perinatal, segundo a fonte?", b:"As adolescentes precoces (menores de 16 anos), principalmente nos dois primeiros anos após a menarca."},
+{cat:"Gravidez na Adolescência", f:"Como evoluiu a idade média da menarca nos últimos dois séculos, segundo a fonte?", b:"De 16-17 anos para 12-13 anos."},
+{cat:"Gravidez na Adolescência", f:"No Brasil, em que faixa etária ocorre em média o início da vida sexual?", b:"Por volta dos 15 a 16 anos."},
+{cat:"Gravidez na Adolescência", f:"Cite intercorrências maternas mais observadas na gravidez na adolescência.", b:"Abortamento, rotura prematura de membranas, doença hipertensiva e infecção do trato urinário."},
+
+// ---- RCIU ----
+{cat:"RCIU", f:"Como é definida a RCIU quanto ao percentil de peso fetal estimado?", b:"Peso fetal estimado no 10º percentil ou abaixo para a idade gestacional."},
+{cat:"RCIU", f:"Como é definido o GIG (grande para idade gestacional)?", b:"Peso fetal estimado no 90º percentil ou mais."},
+{cat:"RCIU", f:"Qual o percentual de bebês com RCIU que são simetricamente pequenos?", b:"Aproximadamente 20% (80% são assimetricamente pequenos)."},
+{cat:"RCIU", f:"Qual mecanismo explica a RCIU assimétrica?", b:"Privação intrauterina, com redistribuição de fluxo sanguíneo para cérebro e coração à custa de fígado e rins."},
+{cat:"RCIU", f:"De que a RCIU é responsável em 30% dos casos?", b:"De todos os casos de síndrome da morte súbita do lactente (SMSL)."},
+{cat:"RCIU", f:"Qual a taxa de mortalidade neonatal em PIG nascidos com 38 semanas, comparada a RN de peso normal?", b:"1% em PIG versus 0,2% em RN de peso normal."},
+{cat:"RCIU", f:"Que percentual de RN PIG tem desfechos normais e crescimento apropriado quando se consideram fatores maternos/étnicos?", b:"Até 70%."},
+{cat:"RCIU", f:"Segundo Usher e McLean (1969), a que percentual os PIG seriam reduzidos usando limite de ±2 desvios-padrão?", b:"3% dos nascidos (em vez de 10%)."},
+];
+
+</script>
+<script>
+let deck = [...CARDS];
+let currentIndex = 0;
+let flipped = false;
+
+const cardEl = document.getElementById('card');
+const frontText = document.getElementById('frontText');
+const backText = document.getElementById('backText');
+const catTagFront = document.getElementById('catTagFront');
+const progressText = document.getElementById('progressText');
+const progressFill = document.getElementById('progressFill');
+const catFilter = document.getElementById('catFilter');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const shuffleBtn = document.getElementById('shuffleBtn');
+
+function populateFilter(){
+  const cats = ['Todas', ...new Set(CARDS.map(c=>c.cat))];
+  catFilter.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+function applyFilter(){
+  const val = catFilter.value;
+  deck = val === 'Todas' ? [...CARDS] : CARDS.filter(c=>c.cat===val);
+  currentIndex = 0;
+  render();
+}
+
+function render(){
+  if(deck.length === 0){
+    frontText.textContent = "Nenhum cartão nesta categoria.";
+    backText.textContent = "";
+    progressText.textContent = "0 / 0";
+    progressFill.style.width = "0%";
+    return;
+  }
+  const c = deck[currentIndex];
+  frontText.textContent = c.f;
+  backText.textContent = c.b;
+  catTagFront.textContent = c.cat;
+  cardEl.classList.remove('flipped');
+  flipped = false;
+  progressText.textContent = `${currentIndex+1} / ${deck.length}`;
+  progressFill.style.width = `${((currentIndex+1)/deck.length)*100}%`;
+  prevBtn.disabled = currentIndex === 0;
+  nextBtn.disabled = currentIndex === deck.length - 1;
+}
+
+cardEl.addEventListener('click', ()=>{
+  flipped = !flipped;
+  cardEl.classList.toggle('flipped', flipped);
+});
+
+prevBtn.addEventListener('click', ()=>{ if(currentIndex>0){ currentIndex--; render(); } });
+nextBtn.addEventListener('click', ()=>{ if(currentIndex<deck.length-1){ currentIndex++; render(); } });
+catFilter.addEventListener('change', applyFilter);
+shuffleBtn.addEventListener('click', ()=>{
+  for(let i=deck.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]]=[deck[j],deck[i]];
+  }
+  currentIndex = 0;
+  render();
+});
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='ArrowRight') nextBtn.click();
+  if(e.key==='ArrowLeft') prevBtn.click();
+  if(e.key===' '){ e.preventDefault(); cardEl.click(); }
+});
+
+populateFilter();
+render();
+</script>
+</body>
+</html>
