@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.4 - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:22px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.4 — "Entre águas e descasos"</h1>
+  <p>Quiz · 2ª Fase · Parasitologia / Helmintos</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 3.4.</footer>
+
+<script>
+const questions = [
+  {
+    q: "Qual estrutura NÃO está presente nos cestoides (tênias) adultos?",
+    options: ["Escólex", "Estróbilo (proglotes)", "Trato digestório", "Tegumento absortivo"],
+    correct: 2,
+    explain: "As tênias não possuem sistema digestório; para obter nutrientes no intestino delgado, absorvem o alimento através de sua cutícula/tegumento."
+  },
+  {
+    q: "Nos nematódeos como Ascaris, Trichuris e Enterobius, qual é a forma infectante?",
+    options: ["A larva L3 filarioide", "O ovo", "A cercária", "O miracídio"],
+    correct: 1,
+    explain: "\"Os ovos são as formas infectantes de Ascaris, Trichuris e Enterobius.\" Já os ancilostomídeos e o Strongyloides têm a larva L3 como forma infectante."
+  },
+  {
+    q: "Qual característica distingue o Schistosoma dos trematódeos típicos?",
+    options: ["É hermafrodita autofecundante", "É dioico, com dimorfismo sexual e canal ginecóforo", "Não possui ventosas", "Tem ciclo monoxeno"],
+    correct: 1,
+    explain: "Os esquistossomos são dioicos; o macho é maior e seu corpo dobra-se formando o canal ginecóforo, onde a fêmea cilíndrica se aloja durante a cópula."
+  },
+  {
+    q: "Qual é a larva ciliada dos trematódeos que infecta o primeiro hospedeiro intermediário (caramujo)?",
+    options: ["Cercária", "Metacercária", "Miracídio", "Oncosfera"],
+    correct: 2,
+    explain: "No interior dos ovos forma-se o miracídio (larva ciliada), que após a eclosão infecta um caramujo ou caracol aquático como primeiro hospedeiro intermediário."
+  },
+  {
+    q: "Qual isotipo de anticorpo domina a resposta imune aos helmintos, ligando-se aos mastócitos?",
+    options: ["IgG", "IgA", "IgE", "IgM"],
+    correct: 2,
+    explain: "A resposta imune aos helmintos é dominada pela produção de IgE, que se liga aos mastócitos (via FcεRI) e é responsável por sua ativação, além da eosinofilia."
+  },
+  {
+    q: "Qual citocina Th2 ativa os eosinófilos na defesa contra helmintos?",
+    options: ["IL-2", "IL-5", "IFN-γ", "TNF-α"],
+    correct: 1,
+    explain: "\"Os eosinófilos são ativados pela IL-5 produzida pelas células Th2 e liberam os conteúdos de seus grânulos, os quais são tóxicos para os parasitas.\""
+  },
+  {
+    q: "Por que os helmintos não são eliminados por fagocitose?",
+    options: ["Porque vivem apenas no sangue", "Porque são multicelulares e grandes demais para serem fagocitados", "Porque não são reconhecidos pelo sistema imune", "Porque não expressam antígenos"],
+    correct: 1,
+    explain: "Como os helmintos parasitas são organismos multicelulares e grandes demais para serem fagocitados, precisam ser atacados por desgranulação de eosinófilos e basófilos diretamente sobre o parasita."
+  },
+  {
+    q: "Que síndrome pode ocorrer durante a migração larvária pulmonar do Ascaris?",
+    options: ["Síndrome nefrótica", "Síndrome de Loeffler (pneumonite eosinofílica)", "Síndrome de Guillain-Barré", "Síndrome hemolítico-urêmica"],
+    correct: 1,
+    explain: "A migração de larvas de Ascaris pelo fígado e pulmões pode desencadear a síndrome de Loeffler (pneumonia verminótica/pneumonite eosinofílica), com tosse, febre e eosinofilia."
+  },
+  {
+    q: "Aproximadamente quantos ovos uma fêmea de Ascaris lumbricoides elimina por dia?",
+    options: ["Cerca de 2.000", "Cerca de 20.000", "Cerca de 200.000", "Cerca de 2 milhões"],
+    correct: 2,
+    explain: "Uma única fêmea fertilizada de Ascaris elimina, em média, cerca de 200.000 ovos por dia junto com as fezes, o que lhe confere grande capacidade de contaminação ambiental."
+  },
+  {
+    q: "Por que as fêmeas de Enterobius vermicularis depositam ovos na região perianal e não nas fezes?",
+    options: ["Porque o intestino é muito ácido", "Porque a condição anaeróbica do intestino impede a maturação dos ovos, que precisam de ambiente aeróbico", "Porque migram involuntariamente", "Porque são atraídas pela luz"],
+    correct: 1,
+    explain: "A condição anaeróbica do intestino impede a maturação dos ovos; a fêmea emerge pelo esfíncter anal para alcançar um ambiente aeróbico, necessário para a maturação dos ovos/larvas."
+  },
+  {
+    q: "O que caracteriza a autoinfecção na enterobiose?",
+    options: ["Transmissão por picada de mosquito", "Contaminação de dedos/unhas ao coçar, com reingestão dos ovos", "Penetração da larva pela pele", "Ingestão de carne malcozida"],
+    correct: 1,
+    explain: "O ato de coçar a região perianal contamina os dedos, unhas e espaço subungueal com ovos infectantes, resultando na reingestão dos ovos (autoinfecção) e reinício do ciclo."
+  },
+  {
+    q: "Qual é a diferença clínica primordial entre Taenia solium e Taenia saginata?",
+    options: ["Só a T. saginata causa teníase", "A cisticercose humana está relacionada exclusivamente às larvas de T. solium", "A T. solium é transmitida por carne bovina", "A T. saginata causa neurocisticercose"],
+    correct: 1,
+    explain: "Ambas causam quadro intestinal semelhante; a diferença primordial é a cisticercose humana, relacionada exclusivamente à infecção pelas larvas de T. solium."
+  },
+  {
+    q: "Como o ser humano adquire a cisticercose (e a neurocisticercose)?",
+    options: ["Ingerindo carne suína com cisticercos", "Ingerindo ovos de T. solium (das fezes humanas)", "Pela picada de um inseto vetor", "Nadando em água contaminada"],
+    correct: 1,
+    explain: "Ao ingerir ovos de T. solium, o humano torna-se hospedeiro intermediário acidental; os embriões penetram os vasos e formam cisticercos em músculos, olhos e cérebro (neurocisticercose)."
+  },
+  {
+    q: "Qual é o método diagnóstico de escolha para o Enterobius vermicularis?",
+    options: ["Método de Kato-Katz", "Método de Hoffman", "Método de Graham (fita adesiva anal)", "Método de Baermann-Moraes"],
+    correct: 2,
+    explain: "O método de Graham (fita adesiva/swab anal) é o de escolha, pois a fêmea deposita os ovos na mucosa perianal e não nas fezes — o exame de rotina das fezes é positivo em apenas 5-15%."
+  },
+  {
+    q: "Para qual finalidade é utilizado principalmente o método de Kato-Katz?",
+    options: ["Quantificação de ovos de helmintos (especialmente S. mansoni)", "Detecção de trofozoítos móveis", "Cultura de larvas", "Sorologia para cisticercose"],
+    correct: 0,
+    explain: "O método de Kato-Katz é a técnica quantitativa mais usada no mundo, empregada para investigar e contar ovos de Schistosoma mansoni e outros helmintos (ovos por grama de fezes)."
+  },
+  {
+    q: "Qual método baseia-se no termo-hidrotropismo para detectar larvas de Strongyloides stercoralis?",
+    options: ["Faust", "Willis", "Baermann-Moraes", "Graham"],
+    correct: 2,
+    explain: "O método de Baermann-Moraes (simplificado por Rugai, Mattos e Brisola) atrai as larvas vivas para o fundo de um recipiente com água aquecida a 40-42°C, valendo-se de seu hidrotropismo e termotropismo."
+  },
+  {
+    q: "Qual é o mecanismo de ação dos benzimidazóis (mebendazol e albendazol)?",
+    options: ["Bloqueio neuromuscular despolarizante", "Inibição da polimerização da β-tubulina (microtúbulos) e da captação de glicose", "Aumento do influxo de cálcio", "Abertura de canais de cloro"],
+    correct: 1,
+    explain: "Os benzimidazóis ligam-se à β-tubulina do helminto e inibem a polimerização dos microtúbulos, interferindo em funções como a captação de glicose."
+  },
+  {
+    q: "Qual é o fármaco de escolha para a esquistossomose?",
+    options: ["Albendazol", "Praziquantel", "Ivermectina", "Niclosamida"],
+    correct: 1,
+    explain: "O praziquantel é o fármaco de escolha para todas as formas de esquistossomose; aumenta o influxo de Ca²⁺, causando contração e paralisia, e danifica o tegumento do parasita."
+  },
+  {
+    q: "Como se trata a obstrução intestinal causada por Ascaris?",
+    options: ["Dose alta de mebendazol", "Hexaidrato de piperazina + óleo mineral (paralisia flácida)", "Praziquantel", "Ivermectina em dose dupla"],
+    correct: 1,
+    explain: "Na oclusão intestinal usa-se hexaidrato de piperazina (50 mg/kg, sem exceder 3 g) com óleo mineral, promovendo paralisia flácida dos vermes; não se usam imidazólicos, que podem estimular a migração."
+  },
+  {
+    q: "Qual estratégia resume as principais medidas de prevenção das geo-helmintíases?",
+    options: ["A estratégia DOTS", "A estratégia WASH (água, saneamento e higiene)", "A estratégia SUS", "A estratégia PALS"],
+    correct: 1,
+    explain: "A prevenção baseia-se na estratégia WASH: água tratada (water), saneamento ambiental (sanitation) e higiene pessoal (hygiene), combinada ao tratamento de indivíduos expostos ou infectados."
+  },
+  {
+    q: "Segundo a OMS, com que frequência deve ser feito o tratamento em massa em áreas de alta transmissão (prevalência entre escolares > 50%)?",
+    options: ["A cada 5 anos", "Semestral (a cada 4-6 meses)", "Apenas com confirmação laboratorial", "Uma vez na vida"],
+    correct: 1,
+    explain: "Em áreas de alto risco (prevalência entre escolares > 50%), recomenda-se o tratamento semestral; anual na transmissão intermediária; e só com confirmação laboratorial na baixa transmissão."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>
