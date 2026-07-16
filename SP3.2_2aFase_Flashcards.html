@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.2 - Flashcards</title>
+<style>
+  :root {
+    --primary: #0b3d64;
+    --primary-light: #16506b;
+    --bg: #f4f7fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 20px;
+    color: #1a1a1a;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  header h1 {
+    color: var(--primary);
+    margin-bottom: 2px;
+    font-size: 22px;
+  }
+  header p {
+    color: #666;
+    margin-top: 0;
+    font-size: 13px;
+  }
+  .controls {
+    max-width: 900px;
+    margin: 0 auto 18px auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+  .filter-btn {
+    background: #fff;
+    border: 1px solid #c3d5e6;
+    color: var(--primary);
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .filter-btn:hover { background: #e8f0f8; }
+  .filter-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .progress-wrap {
+    max-width: 900px;
+    margin: 0 auto 20px auto;
+    text-align: center;
+    font-size: 13px;
+    color: #444;
+  }
+  .progress-bar {
+    width: 100%;
+    max-width: 400px;
+    margin: 6px auto 0 auto;
+    height: 8px;
+    background: #dce8f2;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--primary);
+    width: 0%;
+    transition: width .2s;
+  }
+  .deck {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .card-outer {
+    perspective: 1200px;
+    height: 190px;
+  }
+  .card-outer.hidden { display: none; }
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform .5s;
+    transform-style: preserve-3d;
+    cursor: pointer;
+  }
+  .card-outer.flipped .card-inner {
+    transform: rotateY(180deg);
+  }
+  .card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    overflow: auto;
+  }
+  .card-front {
+    background: #fff;
+    border-top: 5px solid var(--primary);
+  }
+  .card-back {
+    background: var(--primary);
+    color: #fff;
+    transform: rotateY(180deg);
+  }
+  .card-cat {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--primary-light);
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+  .card-back .card-cat { color: #cfe0ee; }
+  .card-text {
+    font-size: 13.5px;
+    line-height: 1.4;
+    flex: 1;
+  }
+  .card-hint {
+    font-size: 10px;
+    color: #999;
+    text-align: center;
+    margin-top: 6px;
+  }
+  .card-back .card-hint { color: #b7cbdd; }
+  footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 11px;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SP 3.2 — "O Retorno de Paulo"</h1>
+  <p>Flashcards · 2ª Fase · Virologia / Dengue</p>
+</header>
+
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<div class="controls" id="filterControls"></div>
+
+<div class="deck" id="deck"></div>
+
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 3.2.</footer>
+
+<script>
+const cards = [
+  {cat:"Biologia Viral", front:"O que é o capsídeo viral?", back:"Conjunto de proteínas (capsômeros) que envolve diretamente o ácido nucleico viral e as proteínas a ele associadas."},
+  {cat:"Biologia Viral", front:"O que é o nucleocapsídeo?", back:"O conjunto formado pelo core (ácido nucleico + proteínas associadas) mais o capsídeo."},
+  {cat:"Biologia Viral", front:"O que é o vírion?", back:"A partícula viral completa e infecciosa."},
+  {cat:"Biologia Viral", front:"De onde se origina o envelope viral e como ele é adquirido?", back:"Origina-se de membranas celulares (plasmática — maioria dos vírus, retículo endoplasmático — ex. flavivírus, ou complexo de Golgi — ex. buniavírus), adquirido por um processo chamado brotamento."},
+  {cat:"Biologia Viral", front:"Qual a diferença entre suscetibilidade e permissividade celular?", back:"Suscetibilidade é a existência de receptores celulares que permitem a ligação viral; permissividade é a capacidade da célula de produzir partículas virais infecciosas."},
+  {cat:"Biologia Viral", front:"Quais são as etapas do ciclo de biossíntese viral?", back:"Adsorção, penetração, desnudamento, transcrição/tradução inicial (proteínas não estruturais), replicação do genoma, montagem e liberação."},
+  {cat:"Biologia Viral", front:"Quais os mecanismos de penetração viral na célula hospedeira?", back:"Fusão direta do envelope com a membrana plasmática; fusão após endocitose mediada por receptor; lise da membrana endocítica; passagem por poros na membrana endocítica; translocação/penetração direta."},
+  {cat:"Biologia Viral", front:"Por que a ligação vírus-receptor costuma ser irreversível? Exceções?", back:"Porque envolve ligações químicas não covalentes estáveis; exceções são ortomixovírus e alguns paramixovírus, que podem se eluir por ação da neuraminidase viral."},
+  {cat:"Classificação de Baltimore", front:"O que caracteriza a Classe I de Baltimore? Exemplo?", back:"Vírus de DNA de fita dupla (DNAfd), transportado ao núcleo e transcrito em RNAm por enzimas celulares. Exemplo: herpesvírus."},
+  {cat:"Classificação de Baltimore", front:"O que caracteriza a Classe II de Baltimore? Exemplo?", back:"DNA de fita simples (DNAfs); sintetiza fita negativa complementar como molde. Exemplo: parvovírus."},
+  {cat:"Classificação de Baltimore", front:"O que caracteriza a Classe III de Baltimore? Exemplo?", back:"RNA de fita dupla (RNAfd); vírus trazem a RNA polimerase-RNA dependente no vírion, genoma segmentado. Exemplo: reovírus."},
+  {cat:"Classificação de Baltimore", front:"O que caracteriza a Classe IV de Baltimore? Exemplos?", back:"RNA fita simples de polaridade positiva (RNAfs+), funciona como RNAm policistrônico. Exemplos: picornavírus, calicivírus, togavírus, flavivírus, coronavírus."},
+  {cat:"Classificação de Baltimore", front:"O que caracteriza a Classe V de Baltimore? Exemplo?", back:"RNA fita simples de polaridade negativa (RNAfs–); genoma não é infeccioso isoladamente. Exemplo: ortomixovírus."},
+  {cat:"Classificação de Baltimore", front:"O que caracteriza a Classe VI de Baltimore? Exemplo?", back:"Retrovírus: genoma diploide de RNAfs+, com transcriptase reversa gerando DNA intermediário (provírus) integrado ao genoma celular."},
+  {cat:"Classificação de Baltimore", front:"O que caracteriza a Classe VII de Baltimore? Exemplo?", back:"DNA de fita dupla com intermediário RNA; transcriptase reversa codificada no próprio genoma. Exemplo: hepadnavírus (hepatite B)."},
+  {cat:"Biologia Viral", front:"O que são PRR e o que eles reconhecem?", back:"Receptores de reconhecimento de padrão. Reconhecem PAMPs (padrões moleculares associados a patógenos), como proteínas de superfície viral (na adsorção) ou o genoma viral liberado após a internalização."},
+  {cat:"Patogenicidade e Virulência", front:"Quais as quatro categorias de genes que afetam a virulência viral?", back:"Genes que afetam a biossíntese viral; que modificam as defesas do hospedeiro; que facilitam a disseminação viral; e toxinas virais diretamente tóxicas para a célula."},
+  {cat:"Patogenicidade e Virulência", front:"Qual proteína viral é o exemplo mais convincente de toxina viral com efeito direto?", back:"NSP4 dos rotavírus — glicoproteína não estrutural que age como enterotoxina na mucosa intestinal."},
+  {cat:"Patogenicidade e Virulência", front:"Cite mecanismos de evasão das defesas do hospedeiro pelos vírus.", back:"Rápida interrupção da síntese de macromoléculas do hospedeiro; comprometimento da produção/apresentação de antígenos (MHC I/II); interferência com células NK e citocinas; inibição da apoptose."},
+  {cat:"Patogenicidade e Virulência", front:"O que caracteriza a infecção crônica (segundo a fonte)?", back:"O vírus é continuamente produzido e excretado."},
+  {cat:"Patogenicidade e Virulência", front:"O que caracteriza a infecção lenta?", back:"Longo período entre a infecção primária e o aparecimento de sintomas, os quais são geralmente fatais."},
+  {cat:"Patogenicidade e Virulência", front:"O que caracteriza a infecção latente?", back:"O vírus permanece na forma não infecciosa e possui períodos intermitentes de reativação."},
+  {cat:"Patogenicidade e Virulência", front:"Por que a reinfecção por dengue pode ser mais grave que a infecção primária?", back:"A imunidade a um sorotipo pode possibilitar a multiplicação de outros sorotipos por meio de infecção de monócitos mediada por anticorpos, aumentando a taxa de infecção — mecanismo associado à febre hemorrágica e à síndrome de choque da dengue."},
+  {cat:"Patogenicidade e Virulência", front:"Cite mecanismos de escape viral em infecções crônicas.", back:"Integração do genoma ao hospedeiro (HIV); supressão de MHC-I/II (herpesvírus); modulação de citocinas (HIV); indução de latência (herpesvírus); infecção de sítios imunologicamente privilegiados (HPV); mutação antigênica (HIV); bloqueio da apoptose (HPV)."},
+  {cat:"Patogenicidade e Virulência", front:"Que vírus exemplifica infecção latente verdadeira com reativação?", back:"Vírus da varicela (reativa como zoster); também hepatite B e vírus JC."},
+  {cat:"Patogenicidade e Virulência", front:"O que causa o vírus JC quando reativado em imunocomprometidos?", back:"Leucoencefalopatia multifocal progressiva (LMP)."},
+  {cat:"Patogenicidade e Virulência", front:"Que padrão de infecção sugere origem zoonótica recente?", back:"Infecção aguda e grave com taxas de mortalidade altas ou variáveis (ex.: influenza A, SARS, Ebola, HIV)."},
+  {cat:"Imunidade Inata", front:"Qual TLR reconhece a principal assinatura molecular viral, o RNA de fita dupla (RNAfd)?", back:"TLR3 — reconhece RNAfd (reovírus) e também RNAfs de HRSV, WNV, DENV, CHIKV e FLUV."},
+  {cat:"Imunidade Inata", front:"Qual TLR reconhece domínios CpG não metilados de DNA?", back:"TLR9 — reconhece DNA de HHV-1, HHV-2 e HHV-5."},
+  {cat:"Imunidade Inata", front:"Qual proteína adaptadora o TLR3 recruta, diferente da maioria dos outros TLR?", back:"TRIF (os demais TLR recrutam a proteína adaptadora MyD88)."},
+  {cat:"Imunidade Inata", front:"O que são RIG-I e MDA-5 e onde atuam?", back:"RNA helicases citoplasmáticas que reconhecem RNAfd viral. RIG-I é essencial para flavivírus, paramixovírus, ortomixovírus e rabdovírus; MDA-5 é requerida para picornavírus."},
+  {cat:"Imunidade Inata", front:"Qual proteína adaptadora o RIG-I recruta após reconhecer RNAfd?", back:"MAVS (proteína de sinalização antiviral mitocondrial)."},
+  {cat:"Imunidade Inata", front:"Quais os principais sensores de DNA citoplasmático/nuclear descritos na fonte?", back:"AIM2, DAI, IFI-16 e cGAS."},
+  {cat:"Imunidade Inata", front:"Qual molécula adaptadora é recrutada pela maioria dos sensores de DNA (exceto AIM2)?", back:"STING, que migra do retículo endoplasmático para o citosol e ativa TBK1 e NF-κB."},
+  {cat:"Imunidade Inata", front:"Quais são os três tipos de interferon (IFN)?", back:"IFN-I (IFN-α e IFN-β), IFN-II (IFN-γ) e IFN-III (IFN-λ)."},
+  {cat:"Imunidade Inata", front:"O que é o \"estado antiviral\" induzido por IFN?", back:"Conjunto de efeitos biológicos em células estimuladas, via genes ISG (ex.: PKR, 2'5'OAS/RNAseL, IFITM, APOBEC), que afetam síntese proteica e metabolismo de RNA, inibindo a biossíntese viral."},
+  {cat:"Imunidade Inata", front:"O que é um inflamassoma e qual sua principal função?", back:"Complexo proteico (ex.: NLRP3) que atua como plataforma para ativação da caspase 1, responsável pela maturação e secreção de IL-1β e IL-18."},
+  {cat:"Imunidade Adaptativa", front:"Quais mecanismos de neutralização viral pelos anticorpos são descritos na fonte?", back:"Agregação de partículas virais; desestabilização da estrutura viral; inibição da adsorção; inibição da fusão/entrada; inibição da liberação (brotamento) viral."},
+  {cat:"Imunidade Adaptativa", front:"Quais as três vias de ativação do sistema complemento?", back:"Via clássica (C1 + complexo antígeno-anticorpo), via alternativa (C3 ligado direto ao vírus) e via das lectinas (MBL)."},
+  {cat:"Imunidade Adaptativa", front:"O que é o MAC e qual sua função?", back:"Complexo de ataque à membrana; forma um poro na bicamada lipídica, causando lise de vírus envelopados e de células infectadas."},
+  {cat:"Imunidade Adaptativa", front:"Quais os dois mecanismos de ativação das células NK?", back:"ADCC (via receptor Fc, reconhecendo células cobertas por anticorpos) e reconhecimento de baixa expressão de MHC I nas células-alvo infectadas."},
+  {cat:"Imunidade Adaptativa", front:"Quais moléculas citotóxicas são liberadas pelos grânulos de NK e TCD8+?", back:"Granzimas, perforina e granulisina."},
+  {cat:"Imunidade Adaptativa", front:"Qual marcador de superfície está associado à exaustão de linfócitos TCD8+?", back:"PD-1 — descrito em infecções crônicas como HCV e HIV."},
+  {cat:"Imunidade Adaptativa", front:"Quais as subpopulações de linfócitos TCD4+ (Th) e suas principais citocinas?", back:"Th1 (IFN-γ, IL-2, IL-18); Th2 (IL-4, IL-5, IL-13); Th17 (IL-17, IL-21, IL-22); Treg (IL-10, TGF-β)."},
+  {cat:"Imunidade Adaptativa", front:"Qual subpopulação Th está associada à supressão da resposta imunológica?", back:"Treg (células T regulatórias), caracterizadas pela expressão de CD25 e, muitas vezes, do fator de transcrição Foxp3."},
+  {cat:"Imunidade Adaptativa", front:"Por que o \"help\" de TCD4+ é importante para a função de TCD8+?", back:"É essencial para a expansão de CTL específicos, diferenciação em células de memória e eficiência da resposta secundária; sua ausência/deficiência (ex.: HIV) está associada à exaustão funcional das TCD8+."},
+  {cat:"Dengue — Clínica", front:"Qual o agente etiológico e gênero viral da dengue?", back:"Arbovírus do gênero Flavivirus, com quatro sorotipos (DEN-1 a DEN-4); existe também o DEN-5, endêmico da Malásia."},
+  {cat:"Dengue — Clínica", front:"A infecção por um sorotipo de dengue confere que tipo de imunidade?", back:"Imunidade vitalícia a esse sorotipo específico, mas apenas imunidade temporária e parcial aos demais sorotipos."},
+  {cat:"Dengue — Clínica", front:"Quanto tempo dura a viremia na dengue e o que ela causa inicialmente?", back:"5 a 6 dias; causa febre, calafrios, cefaleia e mialgias."},
+  {cat:"Dengue — Clínica", front:"Qual o período de incubação da dengue clássica?", back:"3 a 10 dias."},
+  {cat:"Dengue — Clínica", front:"Em que percentual dos casos de dengue aparece o exantema?", back:"Em 15 a 50% dos casos, variando de rash facial a maculopapular e petequial."},
+  {cat:"Dengue — Clínica", front:"Cite sinais de alarme da dengue.", back:"Dor abdominal intensa e contínua, vômitos persistentes, hepatomegalia dolorosa, derrames cavitários, sangramentos importantes, hipotensão arterial/postural, diminuição da diurese, letargia/agitação, pulso rápido e fraco, extremidades frias/cianose, aumento repentino do hematócrito."},
+  {cat:"Dengue — Clínica", front:"Quais os critérios para definição de dengue grave?", back:"Hemoconcentração (aumento de 20% no hematócrito), efusões pleurais ou ascite; plaquetopenia menor que 100.000 céls./mm³; febre de 2 a 7 dias; tendência hemorrágica."},
+  {cat:"Dengue — Clínica", front:"Qual valor de queda da pressão de pulso é sinal inicial de choque na dengue?", back:"Pressão de pulso igual ou menor que 20 mmHg."},
+  {cat:"Dengue — Clínica", front:"Quais os fatores de risco para dengue hemorrágica citados na fonte?", back:"Idade menor que 25 anos, sexo feminino, obesidade, dengue prévia, cepa virulenta, variantes HLA classe I, variante do gene fosfolipase 1."},
+  {cat:"Dengue — Clínica", front:"Como se realiza a prova do laço?", back:"Insufla-se o manguito até o ponto médio entre as pressões sistólica e diastólica, mantendo por 5 minutos; marca-se um círculo do tamanho de uma moeda e verifica-se a presença de múltiplas petéquias."},
+  {cat:"Dengue — Diagnóstico e Tratamento", front:"Até quando o antígeno NS1 pode ser detectado na dengue?", back:"Até o 4º dia de sintomas, com alta especificidade."},
+  {cat:"Dengue — Diagnóstico e Tratamento", front:"Qual exame sorológico é mais utilizado para detecção de IgM na dengue?", back:"MAC-ELISA (detecção de IgM por anticorpos de captura)."},
+  {cat:"Dengue — Diagnóstico e Tratamento", front:"Até que dia deve ser feita a coleta para isolamento viral na dengue?", back:"Até o 5º dia do início dos sintomas — é o meio mais específico de diagnóstico e permite identificar o sorotipo."},
+  {cat:"Dengue — Diagnóstico e Tratamento", front:"Quais achados de hemograma são típicos da dengue clássica?", back:"Leucopenia e neutropenia (pode haver linfocitose com atipia linfocitária); plaquetopenia."},
+  {cat:"Dengue — Diagnóstico e Tratamento", front:"Como é feito o manejo do Grupo A de dengue?", back:"Manejo ambulatorial, com hidratação oral e uso de sintomáticos."},
+  {cat:"Dengue — Diagnóstico e Tratamento", front:"Como é feito o manejo do Grupo D de dengue?", back:"Reposição volêmica intensiva e administração de coloides em casos de choque refratário."},
+  {cat:"Dengue — Diagnóstico e Tratamento", front:"Para qual faixa etária a vacina contra dengue é recomendada (segundo a fonte)?", back:"Crianças de 9 a 16 anos em regiões endêmicas, após sorologia para dengue."},
+  {cat:"Dengue — Diagnóstico e Tratamento", front:"Quais achados laboratoriais têm alta certeza para diferenciar dengue de chikungunya e Zika?", back:"Trombocitopenia, aumento progressivo do hematócrito e leucopenia são de alta certeza para dengue; artralgia para chikungunya; prurido para Zika."},
+  {cat:"Epidemiologia (Arboviroses)", front:"Em quantos grupos os arbovírus podem ser categorizados quanto ao ciclo de transmissão?", back:"Três grupos: ciclo urbano epidêmico; ciclo enzoótico com spillover esporádico para humanos; e ciclo epizoótico estabelecido em animais silvestres/domésticos."},
+  {cat:"Epidemiologia (Arboviroses)", front:"Cite exemplos de arbovírus do grupo de ciclo urbano epidêmico.", back:"DENV, CHIKV e, mais recentemente, ZIKV. O YFV pertencia a esse grupo até a primeira metade do século XX, quando vacinação e erradicação do Aedes aegypti interromperam seu ciclo urbano nas Américas."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => {
+      activeCat = cat;
+      renderFilters();
+      render();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+renderFilters();
+render();
+</script>
+</body>
+</html>

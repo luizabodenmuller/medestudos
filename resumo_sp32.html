@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 2.2cm 2cm;
+    @bottom-center { content: counter(page); font-size: 9pt; color: #666; }
+  }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #1a1a1a;
+    line-height: 1.5;
+    font-size: 10.5pt;
+  }
+  h1.main-title {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    font-size: 20pt;
+    color: #0b3d64;
+    border-bottom: 3px solid #0b3d64;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  p.subtitle {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    color: #555;
+    font-size: 11pt;
+    margin-top: 0;
+    margin-bottom: 18px;
+  }
+  .case-box {
+    background: #f2f7fb;
+    border-left: 4px solid #0b3d64;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 10pt;
+  }
+  .case-box h3 {
+    margin-top: 0;
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    color: #0b3d64;
+    font-size: 12pt;
+  }
+  h2.section {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    font-size: 14.5pt;
+    color: #ffffff;
+    background: #0b3d64;
+    padding: 6px 12px;
+    margin-top: 28px;
+    margin-bottom: 12px;
+    page-break-before: always;
+  }
+  h2.section.first {
+    page-break-before: auto;
+  }
+  h3.sub {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    font-size: 12pt;
+    color: #0b3d64;
+    border-bottom: 1px solid #cfd8e3;
+    padding-bottom: 3px;
+    margin-top: 20px;
+  }
+  h4.subsub {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    font-size: 11pt;
+    color: #16506b;
+    margin-bottom: 4px;
+  }
+  p { text-align: justify; margin: 6px 0; }
+  ul, ol { margin: 6px 0; padding-left: 20px; }
+  li { margin-bottom: 3px; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+    font-size: 9.5pt;
+  }
+  th, td {
+    border: 1px solid #b9c6d3;
+    padding: 5px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #dce8f2;
+    font-family: 'Helvetica', 'Arial', sans-serif;
+  }
+  tr:nth-child(even) { background: #f7fafc; }
+  .note {
+    background: #fff6e0;
+    border: 1px solid #e8d38a;
+    padding: 8px 12px;
+    font-size: 9.5pt;
+    font-style: italic;
+    margin: 10px 0;
+  }
+  .keyword-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 16px 0;
+  }
+  .keyword {
+    background: #eef4fa;
+    border: 1px solid #c3d5e6;
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 9pt;
+    font-family: 'Helvetica', 'Arial', sans-serif;
+  }
+  .qa-tag {
+    font-family: 'Helvetica', 'Arial', sans-serif;
+    font-size: 8.5pt;
+    color: #fff;
+    background: #16506b;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+  }
+  .refs {
+    font-size: 9pt;
+    margin-top: 30px;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+  }
+  .refs p { text-align: left; }
+  .eng { font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1 class="main-title">SP 3.2 — "O Retorno de Paulo"</h1>
+<p class="subtitle">2ª Fase &middot; Resumo &middot; Virologia / Dengue</p>
+
+<div class="case-box">
+<h3>Caso clínico</h3>
+<p>Paulo Henrique, 22 anos, estudante de Engenharia Civil, retorna à cidade natal (cidade de médio porte no interior do estado) após dois meses de estágio no Maranhão, em projeto de saneamento básico em comunidades ribeirinhas. Cinco dias após o retorno, procura a UPA com febre alta de início súbito (39°C), cefaleia intensa, dor retro-orbital, mialgia generalizada, astenia, dor nas articulações, náuseas e erupção cutânea iniciada no tronco que se espalhou pelo corpo nas últimas 24 horas. Ao exame: levemente desidratado, petéquias em membros inferiores, sinais de prostração, PA 100/60 mmHg, FC 102 bpm. Relata colega de estágio diagnosticado com dengue há cerca de duas semanas, e que o bairro onde mora atualmente tem muitos focos de água parada e aumento de casos de "viroses" relatados por vizinhos.</p>
+</div>
+
+<div class="keyword-box">
+<span class="keyword">Vírus</span>
+<span class="keyword">Patogenicidade</span>
+<span class="keyword">Interações Hospedeiro-Patógeno</span>
+<span class="keyword">Doenças Infecciosas</span>
+<span class="keyword">Epidemiologia</span>
+<span class="keyword">Dengue</span>
+</div>
+
+<!-- ============ QA 1 ============ -->
+<h2 class="section first"><span class="qa-tag">QA 1</span>Biologia Viral: Estrutura, Genoma, Classificação e Ciclo de Replicação</h2>
+
+<h3 class="sub">Estrutura viral</h3>
+<p>Os vírus são estruturas subcelulares, com ciclo de biossíntese exclusivamente intracelular, sem nenhum metabolismo fora da célula hospedeira. Contêm, como material genético, RNA ou DNA — nunca os dois juntos — e não apresentam potencial genético ou bioquímico para gerar a energia necessária a processos biológicos como a síntese de macromoléculas.</p>
+<p>Um vírus é um arranjo molecular de proteínas e ácido nucleico, eventualmente com envelope glicolipoproteico. Os vírus mais simples consistem em uma molécula de ácido nucleico envolta por uma capa de proteínas chamada <b>capsídeo</b>, de simetria icosaédrica. O conjunto de ácido nucleico e proteínas associadas mais o capsídeo é chamado <b>nucleocapsídeo</b>. Alguns vírus apresentam um envoltório glicolipoproteico chamado <b>envelope</b>, originado de membranas de diferentes compartimentos celulares modificadas após a infecção. Vírus com envelope podem ter capsídeo icosaédrico ou helicoidal. A partícula viral completa é o <b>vírion</b>.</p>
+
+<h4 class="subsub">Nomenclatura</h4>
+<table>
+<tr><th>Termo</th><th>Definição</th></tr>
+<tr><td>Capsômeros</td><td>Protuberâncias na superfície de vírus não envelopados, visualizadas ao microscópio eletrônico; formam o capsídeo (hexâmeros nas áreas planas, pentâmeros nos vértices)</td></tr>
+<tr><td>Capsídeo</td><td>Conjunto de proteínas formadas pelos capsômeros que envolve diretamente o ácido nucleico e proteínas associadas</td></tr>
+<tr><td>Core (cerne)</td><td>Ácido nucleico viral associado a proteínas envolvidas na replicação do genoma</td></tr>
+<tr><td>Nucleocapsídeo</td><td>Core + capsídeo</td></tr>
+<tr><td>Matriz proteica</td><td>Proteínas não glicosiladas entre o envelope e o capsídeo; sustentam o envelope e ancoram proteínas de superfície</td></tr>
+<tr><td>Envelope</td><td>Camada bilipídica da célula hospedeira que envolve certos vírus, contendo glicoproteínas (peplômeros/espículas)</td></tr>
+<tr><td>Vírion</td><td>Partícula viral completa e infecciosa</td></tr>
+<tr><td>Unidade proteica</td><td>Cadeia polipeptídica (ex.: proteína viral 1 (VP1) do poliovírus)</td></tr>
+<tr><td>Subunidade estrutural / protômero</td><td>Uma ou mais unidades proteicas não idênticas que formam capsômeros, mantidos por ligações não covalentes</td></tr>
+<tr><td>Unidade de montagem</td><td>Grupo de subunidades/protômeros formado durante a montagem do vírus</td></tr>
+</table>
+
+<p>A arquitetura (simetria) dos vírus é definida pela forma e composição das subunidades proteicas do capsídeo e suas interações com o ácido nucleico. Vírus com simetria icosaédrica podem não ter envelope e são os menores conhecidos (18 a 60 nm), como o poliovírus; outros, como o herpesvírus, têm arquitetura icosaédrica com envelope.</p>
+<p>O envelope é glicolipoproteico e pode originar-se da membrana plasmática (maioria dos vírus), do retículo endoplasmático (ex.: flavivírus) ou do complexo de Golgi (ex.: buniavírus), por um processo chamado <b>brotamento</b>.</p>
+
+<h4 class="subsub">Ácido nucleico viral</h4>
+<p>A maioria dos genomas virais é haploide (uma cópia de cada gene), exceto os retrovírus, que são diploides. Os genomas podem ser de fita dupla, fita simples, circulares ou lineares, e únicos ou segmentados. Genomas de DNA podem ser de fita dupla (herpesvírus) ou fita simples (parvovírus); os hepadnavírus (hepatite B) têm DNA de fita dupla com segmento parcial de fita simples. Genomas de RNA de fita simples podem ter polaridade positiva (RNAfs+, funcionam como RNAm, ex.: poliovírus) ou negativa (RNAfs–, complementar ao RNAm, ex.: paramixovírus); a maioria dos RNA de polaridade negativa tem um único segmento, exceto os ortomixovírus (influenza), que têm sete ou oito segmentos.</p>
+
+<h3 class="sub">Biossíntese viral e ciclo de replicação</h3>
+<p>A produção de vírions só ocorre se a partícula encontrar uma célula capaz de realizar a biossíntese. <b>Suscetibilidade</b> é a existência de receptores celulares que permitem a ligação viral; <b>permissividade</b> é a capacidade da célula de produzir partículas virais infecciosas — os dois conceitos não devem ser confundidos. Após a liberação do genoma na célula, primeiro são produzidas as proteínas não estruturais (que garantem a replicação do genoma); depois, em fase mais tardia, as proteínas estruturais que compõem a nova partícula.</p>
+
+<h4 class="subsub">Etapas do ciclo (Figura 3.4 da fonte)</h4>
+<ol>
+<li><b>Adsorção</b>: ligação específica de proteínas do capsídeo ou glicoproteínas do envelope a receptores da superfície celular. A ligação costuma ser irreversível, exceto em ortomixovírus e alguns paramixovírus, que podem se eluir por ação da neuraminidase viral. As ligações são não covalentes (pontes de hidrogênio, atrações iônicas, forças de van der Waals).</li>
+<li><b>Penetração</b>: dependente de energia. Mecanismos: (1) fusão direta do envelope com a membrana plasmática (ex.: sarampo); (2) fusão após endocitose mediada por receptores, dependente de pH do endossoma (ex.: influenza); (3) lise da membrana endocítica, em vírus não envelopados (ex.: adenovírus); (4) passagem por poros na membrana endocítica (ex.: poliovírus); (5) translocação/penetração direta, evento raro (ex.: bacteriófagos, com formação de poro e retenção do capsídeo fora da célula). A endocitose mediada por receptores é provavelmente o mecanismo mais comum.</li>
+<li><b>Desnudamento</b>: liberação do ácido nucleico viral no citoplasma; local variável conforme a família viral (citosol, endossoma, poros nucleares ou núcleo).</li>
+<li><b>Transcrição/tradução inicial</b>: síntese de proteínas não estruturais (de ligação ao DNA, enzimas/polimerases). A síntese do genoma de vírus de DNA ocorre, em geral, no núcleo; a de vírus de RNA, no citoplasma (exceção: poxvírus, DNA fita dupla replicado no citoplasma). Alguns vírus formam poliproteínas clivadas posteriormente, pois as células só traduzem RNAm monocistrônicos.</li>
+<li><b>Replicação do genoma</b>: ocorre, em geral, no mesmo local da transcrição das proteínas não estruturais.</li>
+<li><b>Montagem e liberação</b>: maturação das proteínas virais, automontagem e liberação da progênie viral.</li>
+</ol>
+
+<h3 class="sub">Classificação de Baltimore (1971)</h3>
+<p>Classificação baseada em modelos de replicação e tipo de ácido nucleico viral, inicialmente com seis classes, posteriormente ampliada para sete.</p>
+<table>
+<tr><th>Classe</th><th>Tipo de ácido nucleico</th><th>Exemplo</th><th>Observações</th></tr>
+<tr><td>I</td><td>DNA de fita dupla (DNAfd)</td><td>Herpesvírus</td><td>DNA transportado ao núcleo, transcrito em RNAm por enzimas celulares. Maioria replica no núcleo (exceto poxvírus, no citoplasma)</td></tr>
+<tr><td>II</td><td>DNA de fita simples (DNAfs)</td><td>Parvovírus</td><td>Sintetizam fita negativa complementar como molde; replicam no núcleo com polimerases celulares</td></tr>
+<tr><td>III</td><td>RNA de fita dupla (RNAfd)</td><td>Reovírus</td><td>Trazem RNA polimerase-RNA dependente no vírion; genoma segmentado, RNAm mono ou bicistrônicos</td></tr>
+<tr><td>IV</td><td>RNA fita simples polaridade positiva (RNAfs+)</td><td>Picornavírus, calicivírus, togavírus, flavivírus, coronavírus</td><td>RNA funciona como RNAm policistrônico; necessitam RNA polimerase-RNA dependente codificada pelo próprio genoma</td></tr>
+<tr><td>V</td><td>RNA fita simples polaridade negativa (RNAfs–)</td><td>Ortomixovírus</td><td>Genoma não é infeccioso isoladamente; segmentado (ortomixovírus) ou não (paramixovírus, rabdovírus, filovírus, buniavírus)</td></tr>
+<tr><td>VI</td><td>RNA fita simples com intermediário DNA</td><td>Retrovírus</td><td>Genoma diploide (2 fitas de RNAfs+); transcriptase reversa gera DNA (provírus) integrado ao genoma celular</td></tr>
+<tr><td>VII</td><td>DNA fita dupla com intermediário RNA</td><td>Hepadnavírus</td><td>Transcriptase reversa codificada no genoma; produção de RNAm similar à Classe I</td></tr>
+</table>
+
+<h3 class="sub">Reconhecimento viral pela imunidade inata</h3>
+<p>Componentes estruturais dos vírus são reconhecidos por <b>receptores de reconhecimento de padrão (PRR)</b>, que podem estar na superfície celular (reconhecendo proteínas virais na adsorção) ou no citoplasma/vesículas (reconhecendo o genoma viral liberado após internalização). A ativação de PRR induz produção de citocinas (como IFN), recrutamento e ativação de células do sistema imunológico, iniciando resposta inflamatória — mecanismo relacionado a manifestações clínicas inespecíficas do período prodrômico, como a febre.</p>
+
+<!-- ============ QA 2 ============ -->
+<h2 class="section"><span class="qa-tag">QA 2</span>Patogenicidade e Virulência Viral</h2>
+
+<h3 class="sub">Determinantes genéticos de virulência viral</h3>
+<p>Genes que afetam a virulência viral podem ser divididos em quatro categorias (podendo se sobrepor):</p>
+<ul>
+<li><b>Produtos gênicos que afetam a biossíntese viral</b>: enzimas do metabolismo de nucleotídeos e síntese de DNA (timidino-cinases, ribonucleotídeo-redutases). Mutações nesses genes reduzem a neurovirulência do HHV-1 e HHV-2, pois os mutantes não se propagam em neurônios.</li>
+<li><b>Sequências não codificantes que afetam a biossíntese viral</b>: as variantes atenuadas da vacina Sabin (poliovírus) têm mutação na região 5' não codificante do RNA viral, impedindo a biossíntese no SNC.</li>
+<li><b>Produtos gênicos que modificam as defesas do hospedeiro</b>: <b>virocinas</b> (análogas virais de citocinas/fatores de crescimento) e <b>virorreceptores</b> (homólogos de receptores celulares para citocinas/quimiocinas).</li>
+<li><b>Genes que facilitam a disseminação viral</b>: ex. glicoproteína D (gD) do HHV-1 — mudança de um único aminoácido bloqueia via neural de espalhamento ao SNC; proteína σ1 do reovírus determina rota de disseminação (neural ou hematogênica).</li>
+<li><b>Toxinas virais</b>: proteína NSP4 dos rotavírus, glicoproteína não estrutural que atua como enterotoxina, desencadeando via de transdução de sinal na mucosa intestinal e aumento de cálcio intracelular.</li>
+</ul>
+
+<h3 class="sub">Evasão das defesas do hospedeiro</h3>
+<p>Mais de 50 proteínas virais já foram identificadas capazes de modular as defesas dos mamíferos. Mecanismos incluem:</p>
+<ul>
+<li>Rápida interrupção da síntese de macromoléculas do hospedeiro</li>
+<li>Comprometimento da produção de antígenos virais (restrição da expressão gênica, infecção em sítios pouco acessíveis ao sistema imunológico, variações antigênicas)</li>
+<li>Interferência com a apresentação de antígenos pelo MHC I e MHC II</li>
+<li>Interferência com a atividade de células NK</li>
+<li>Interferência com a função de citocinas (homólogos virais de reguladores celulares, neutralização de citocinas, receptores solúveis de citocinas)</li>
+<li>Inibição da apoptose</li>
+</ul>
+
+<h3 class="sub">Infecções agudas, crônicas e latentes</h3>
+<p>As infecções persistentes, ao contrário das agudas, não são rapidamente eliminadas; partículas virais continuam sendo produzidas por meses ou anos, de forma contínua ou intermitente. As infecções podem ser: <b>crônica</b> (vírus continuamente produzido e excretado), <b>lenta</b> (longo período entre infecção primária e sintomas, geralmente fatais) ou <b>latente</b> (vírus em forma não infecciosa, com períodos intermitentes de reativação).</p>
+
+<h4 class="subsub">Infecção aguda primária e secundária</h4>
+<p>Na infecção aguda primária, o vírus se multiplica sem memória imunológica prévia; a IgM aparece primeiro e desaparece após a fase aguda, a IgG aparece depois e pode persistir por longos períodos. Na reinfecção (infecção aguda secundária), a memória imunológica permite resposta mais rápida, com multiplicação viral suprimida e sintomas ausentes ou mais leves. Exceção importante: na <b>dengue</b>, a imunidade a um sorotipo pode facilitar a multiplicação de outro sorotipo via infecção de monócitos mediada por anticorpos, aumentando a taxa de infecção — mecanismo associado à febre hemorrágica da dengue e à síndrome de choque da dengue.</p>
+
+<h4 class="subsub">Infecção crônica e mecanismos de escape</h4>
+<p>Mecanismos que permitem persistência viral indefinida:</p>
+<ul>
+<li>Integração do genoma viral ao genoma do hospedeiro (ex.: HIV)</li>
+<li>Supressão de MHC-I e MHC-II (ex.: herpesvírus)</li>
+<li>Modulação de citocinas (ex.: HIV)</li>
+<li>Inibição da replicação viral para induzir latência (herpesvírus)</li>
+<li>Infecção de áreas imunologicamente privilegiadas (ex.: HPV)</li>
+<li>Infecção de linfócitos</li>
+<li>Mutação antigênica (ex.: HIV)</li>
+<li>Bloqueio da apoptose (ex.: HPV)</li>
+</ul>
+<p>Exemplos: hepatite B pode cursar com agravamentos ocasionais e dano hepático progressivo; HIV tem progressão lenta.</p>
+
+<h4 class="subsub">Infecção latente e reativação</h4>
+<p>A infecção crônica apresenta algum nível de replicação mesmo em fases inativas (ex.: rubéola congênita, HIV). A infecção latente verdadeira caracteriza-se pela ausência de replicação em períodos inativos (ex.: varicela, que reativa como zoster; hepatite B; vírus JC). A reativação geralmente decorre de traumas, estresse ou outras agressões, e pode ser acompanhada de reaparecimento de IgM. O vírus JC reativado em imunocomprometidos causa leucoencefalopatia multifocal progressiva (LMP).</p>
+<p>Infecções persistentes latentes têm três propriedades gerais: expressão ausente ou ineficiente do ciclo produtivo; reconhecimento ineficiente pelo sistema imunológico da célula com genoma latente; e persistência do genoma viral intacto, podendo iniciar infecção aguda produtiva.</p>
+
+<h3 class="sub">Fatores que determinam gravidade e persistência</h3>
+<p>Vírus que causam doença aguda seguida de eliminação e imunidade dependem de grandes populações hospedeiras (o resultado não pode ser muito letal, ou o vírus não se mantém) — padrão comum em reservatórios animais de grandes populações (aves migratórias, rebanhos) e, desde a revolução agrícola/urbana, também em populações humanas urbanas. Já em pequenos grupos nômades (padrão ancestral humano), apenas vírus capazes de estabelecer infecção persistente, com pouca redução da capacidade de sobrevivência do hospedeiro, podiam persistir.</p>
+<p>Vírus persistentes notáveis: herpesvírus humanos, HPV e poliomavírus relacionado, retrovírus humanos, hepatite B e hepatite C (dano hepático crônico). Já vírus associados a infecções agudas graves e alta mortalidade sugerem zoonose recente — exemplos: influenza A (reservatório em aves), SARS (coronavírus de morcego/civeta), Ebola (reservatório provável em morcegos), vírus do Nilo Ocidental (aves), e o HIV, originado de retrovírus de primatas não humanos na África.</p>
+
+<div class="note">Nota de fidelidade: o documento fonte não apresenta resposta desenvolvida para a pergunta "QA_4 – características clínicas e laboratoriais que distinguem infecções virais (como a dengue) de infecções bacterianas". Apenas o enunciado da questão consta no material enviado, sem conteúdo de resposta. Por isso, esse tema não foi incluído neste resumo para não acrescentar informação externa ao documento.</div>
+
+<!-- ============ QA 3 ============ -->
+<h2 class="section"><span class="qa-tag">QA 3</span>Defesas do Hospedeiro contra Infecções Virais</h2>
+
+<p>A interação dos vírus com o sistema imunológico (SI) inicia-se pelo reconhecimento do patógeno por células residentes na porta de entrada. Esse reconhecimento induz mediadores inflamatórios que inibem a biossíntese viral e regulam a resposta de outros componentes do SI. A doença viral pode resultar da incapacidade do SI de conter a infecção, ou de uma resposta inflamatória exacerbada.</p>
+
+<h3 class="sub">Imunidade inata</h3>
+<h4 class="subsub">Receptores do tipo Toll (TLR)</h4>
+<p>Família de 13 receptores descritos (TLR1-TLR13), expressos em células dendríticas, macrófagos, células epiteliais e endoteliais, linfócitos e NK. TLR1, 2, 4, 5, 6, 10, 11 são de superfície (reconhecem componentes de superfície viral); TLR3, 7, 8 e 9 são intracelulares (reconhecem ácido nucleico viral). Contêm domínio LRR (reconhecimento) e domínio TIR (sinalização). TLR3 reconhece RNAfd (reovírus, HRSV, WNV, DENV, CHIKV, FLUV); TLR7/8 reconhecem RNAfs; TLR9 reconhece CpG não metilado de DNA (HHV-1, HHV-2, HHV-5). A maioria dos TLR recruta MyD88 (ativando IKK-β/NF-κB e IRF7/IFN-α); TLR3 recruta TRIF (ativando NF-κB, IRF3, AP-1); TLR4 compartilha a via de TRIF. A ativação de TLR também é crítica para maturação de células dendríticas e apresentação cruzada de antígenos a TCD8+ (especialmente via TLR3).</p>
+<p>Nem sempre a ativação de TLR é benéfica: o TLR3 está implicado na capacidade do WNV de atravessar a barreira hematoencefálica; deficiência de TLR2 protege contra encefalite por HHV-1; deficiência de TLR4 associa-se a pior resposta ao HRSV e maior gravidade em crianças.</p>
+
+<h4 class="subsub">RNA helicases (RIG-I, MDA-5) e sensores de DNA</h4>
+<p>RIG-I e MDA-5 localizam-se no citoplasma e reconhecem RNAfd viral, recrutando MAVS e ativando NF-κB/IRF3. RIG é essencial para reconhecimento de flavivírus, paramixovírus, ortomixovírus e rabdovírus; MDA-5, para picornavírus. Sensores de DNA citoplasmáticos/nucleares incluem AIM2, DAI, IFI-16 e cGAS — a maioria recruta STING, que ativa TBK1/NF-κB, levando à produção de IFN-I e citocinas inflamatórias.</p>
+
+<h4 class="subsub">Interferons (IFN)</h4>
+<p>Classificados em IFN-I (IFN-α e IFN-β), IFN-II (IFN-γ) e IFN-III (IFN-λ). A ligação de IFN-I a seus receptores ativa STAT, que se liga a ISRE, induzindo mais de 400 genes estimulados por interferon (ISG), gerando o "estado antiviral" (ex.: PKR, 2'5'OAS/RNAseL, IFITM, APOBEC). Modelos deficientes em IFN-I ou seus receptores mostram aumento da biossíntese de flavivírus, reovírus, filovírus e herpesvírus.</p>
+
+<h4 class="subsub">Inflamassomas</h4>
+<p>Complexos proteicos (ex.: NLRP3) ativados por reconhecimento de padrões virais, funcionando como plataformas para ativação da caspase 1, responsável pela maturação de IL-1β e IL-18. São necessários dois sinais: um (via TLR) induz síntese de pró-IL-1β/pró-IL-18; outro, disparado por alterações iônicas (efluxo de K+), ativa a caspase 1.</p>
+
+<h3 class="sub">Imunidade humoral</h3>
+<h4 class="subsub">Linfócitos B e anticorpos</h4>
+<p>A ativação de linfócitos B (via BCR) gera secreção inicial de IgM; após interação com TCD4+, ocorre mudança de classe para IgG (opsonina, ativa complemento), IgA (mucosas) e IgE. O processo de <b>neutralização</b> pode ocorrer por: agregação de partículas virais; desestabilização da estrutura; inibição da adsorção; inibição da fusão; inibição da liberação viral (ex.: anticorpos anti-neuraminidase do FLUV). Anticorpos não neutralizantes também contribuem via opsonização (FcR), ADCC e ativação do complemento. O desenvolvimento de memória B é o principal mecanismo de proteção contra reinfecções — racional das vacinas.</p>
+
+<h4 class="subsub">Sistema complemento</h4>
+<p>Três vias de ativação: clássica (C1 + complexo antígeno-anticorpo), alternativa (C3 direto no vírus) e das lectinas (MBL). Geram C3 convertase, que cliva C3 em C3b (opsonina) e C3a; C3b associado a C5 gera C5 convertase, clivando C5 em C5a/C5b, levando à formação do complexo de ataque à membrana (MAC), que lisa vírus envelopados e células infectadas. C3a, C4a e C5a são anafilatoxinas (vasodilatação, recrutamento de leucócitos). A ativação exacerbada do complemento pode causar dano tecidual (ex.: hiper-reatividade brônquica e pneumonia por imunocomplexos na infecção por HRSV).</p>
+
+<h3 class="sub">Imunidade celular</h3>
+<h4 class="subsub">Células NK</h4>
+<p>Componentes efetores da imunidade inata, sem receptores clonais (TCR/BCR). Ativação por dois mecanismos: (1) ADCC, via FcR, reconhecendo células cobertas por anticorpos; (2) reconhecimento de baixa expressão de MHC I nas células infectadas (escape da inibição). Liberam grânulos com granzimas e perforinas, induzindo apoptose. Secretam IFN-γ e quimiocinas (MIP-1α, MIP-1β, RANTES).</p>
+
+<h4 class="subsub">Linfócitos T</h4>
+<p>Reconhecimento clonal via TCR, associado a CD8 (MHC I, patógenos citoplasmáticos) ou CD4 (MHC II, patógenos intravesiculares, restrito a APC). Existem mecanismos de apresentação cruzada.</p>
+<p><b>TCD8+</b>: atividade citotóxica via grânulos (perforina, granzimas, granulisina) e via Fas/FasL, induzindo apoptose da célula infectada. Secretam IFN-γ, TNF-α, MIP-1β. Persistência antigênica crônica pode levar à <b>exaustão celular</b> (marcador PD-1), descrita em HCV e HIV.</p>
+<p><b>TCD4+</b>: reguladoras da resposta imunológica. Diferenciam-se em Th1 (IFN-γ, IL-2, IL-18 — centrais na resposta antiviral), Th2 (IL-4, IL-5, IL-13), Th17 (IL-17, IL-21, IL-22 — associadas a inflamação exacerbada, ex.: ceratite por HHV-1, miocardite por coxsackievírus B3, HBV crônica; também importantes para imunidade de mucosas) e Treg (CD25, Foxp3, IL-10, TGF-β — supressão da resposta, relevantes em HIV e HCV crônicos). O "help" de TCD4+ é essencial para expansão de TCD8+, memória imunológica e maturação de afinidade de anticorpos (mudança de classe de Ig).</p>
+
+<!-- ============ QA 5 ============ -->
+<h2 class="section"><span class="qa-tag">QA 5</span>Epidemiologia das Arboviroses no Brasil (foco em Dengue)</h2>
+
+<p class="eng">O material fonte desta seção está em inglês; os trechos técnicos foram mantidos no idioma original, conforme o documento.</p>
+
+<h3 class="sub">Emergência de arbovírus</h3>
+<p class="eng">Arbovirus emergence and epidemics can be considered ecological and evolutionary issues, as they mainly depend on the physical contact between humans and viruses in enzootic or epizootic cycles, and on the adaptation of the viruses to a new host and vectors from urban areas. Humans living in rural areas near the forest, the presence of bridge vectors feeding from both sylvatic vertebrates and humans, hunting, deforestation, mining, and every human activity on rural and sylvatic areas increase the risk for viral emergence from sylvatic sources. Climate change, also a consequence of anthropogenic activity, has been linked to the expansion of vector distribution, and is, therefore, considered another important factor for viral emergence.</p>
+<p class="eng">Most arboviruses are RNA viruses whose rapid evolution is the result of the convergence of high mutation rates, large population sizes, and short generation times, generating genetically heterogeneous viral populations (quasispecies).</p>
+
+<h3 class="sub">Três grupos de arbovírus quanto ao ciclo de transmissão</h3>
+<ol>
+<li class="eng"><b>Urban epidemic cycle</b>: viruses endemic in several countries (DENV, CHIKV, and more recently ZIKV). YFV belonged to this category until vaccine development and Aedes aegypti eradication campaigns interrupted its urban cycle in the Americas in the first half of the 20th century. Maintained mainly by increased human population density; factors include unplanned urbanization with deficient sanitary services, lack of awareness, and little active community involvement in vector control.</li>
+<li class="eng"><b>Enzootic cycle with sporadic human spillover</b>: sporadic cases from direct spillover in the "emergence zone" (e.g., YFV outbreak in Brazil since end of 2016, without human-to-human transmission via Aedes aegypti; OROV; MAYV, with recent MAYV/DENV and MAYV/CHIKV coinfections suggesting possible human-to-human transmission).</li>
+<li class="eng"><b>Established epizootic cycle</b> in wildlife/domestic animals as amplifying hosts, humans as dead-end hosts (viremia insufficient for onward transmission): WNV, VEEV, EEEV, WEEV, SLEV, among others.</li>
+</ol>
+
+<div class="note">Nota de fidelidade: o documento fonte apresenta, para esta QA, apenas o texto geral sobre emergência e ciclos de transmissão de arbovírus (em inglês), sem detalhamento específico sobre vetores (Aedes aegypti/albopictus), variação sazonal por região do Brasil, incidência/prevalência numérica, medidas de controle vetorial ou vigilância epidemiológica, nem relação direta com o caso de Paulo. Esses pontos solicitados no enunciado da QA_5 não constam no material fornecido e, portanto, não foram desenvolvidos neste resumo.</div>
+
+<!-- ============ QA 6 ============ -->
+<h2 class="section"><span class="qa-tag">QA 6</span>História Natural da Dengue</h2>
+
+<p>A dengue é a doença transmitida por mosquitos mais comum no Brasil, com mais de 50 milhões de casos anuais no mundo, em mais de 100 países. É causada por um arbovírus do gênero <i>Flavivirus</i>, com quatro sorotipos: DEN-1, DEN-2, DEN-3, DEN-4 (existe também o DEN-5, endêmico da Malásia). No Brasil, o sorotipo mais frequente é o 1, mas os tipos 2 e 3 também são comuns. A infecção por um sorotipo confere imunidade vitalícia a ele, mas apenas imunidade temporária e parcial aos demais. Transmissão pela picada da fêmea do <i>Aedes</i>, principalmente <i>Aedes aegypti</i>. A doença varia de assintomática a grave, com risco de morte.</p>
+
+<h3 class="sub">Etiologia e fisiopatologia</h3>
+<p>Após a picada, o vírus circula até células-alvo no sistema linfático, onde se replica. A viremia ocorre em 5 a 6 dias, causando febre, calafrios, cefaleia e mialgias. Anticorpos IgM e IgG bloqueiam a disseminação. A imunidade prévia parcial pode levar à hipersensibilidade e piora do quadro, predispondo a fenômenos hemorrágicos. Na dengue hemorrágica há aumento da permeabilidade capilar, hemoconcentração e choque.</p>
+
+<h3 class="sub">Quadro clínico</h3>
+<p>A maioria das infecções é sintomática, exceto em crianças menores de 15 anos (tendência a quadro pouco sintomático ou assintomático). A dengue clássica manifesta-se com febre alta súbita, mialgia, cefaleia, dor retro-ocular, astenia, náuseas e vômitos, após incubação de 3 a 10 dias. Pode haver diarreia, sintomas respiratórios, icterícia, linfonodomegalia e hepatomegalia dolorosa. O exantema aparece em 15 a 50% dos casos (rash facial a maculopapular e petequial). Manifestações hemorrágicas (epistaxe, gengivorragia, petéquias) podem ocorrer. Sintomas duram de 3 a 7 dias; convalescença pode levar semanas.</p>
+
+<h4 class="subsub">Sinais de alarme</h4>
+<ul>
+<li>Dor abdominal intensa e contínua</li>
+<li>Vômitos persistentes</li>
+<li>Hepatomegalia dolorosa</li>
+<li>Derrames cavitários</li>
+<li>Sangramentos importantes</li>
+<li>Hipotensão arterial e hipotensão postural</li>
+<li>Diminuição da diurese</li>
+<li>Letargia/agitação</li>
+<li>Pulso rápido e fraco</li>
+<li>Extremidades frias/cianose</li>
+<li>Lipotimia</li>
+<li>Diminuição da temperatura corporal e sudorese profusa</li>
+<li>Aumento repentino de hematócrito</li>
+</ul>
+
+<h4 class="subsub">Critérios para dengue grave</h4>
+<ul>
+<li>Alteração da permeabilidade vascular: hemoconcentração (aumento de 20% no hematócrito), efusões pleurais ou ascite</li>
+<li>Plaquetopenia menor que 100.000 céls./mm³</li>
+<li>Febre durando de 2 a 7 dias</li>
+<li>Tendência hemorrágica (prova do laço positiva ou sangramento espontâneo)</li>
+</ul>
+<p>A dengue hemorrágica caracteriza-se por aumento da permeabilidade vascular, hemoconcentração e plaquetopenia, podendo evoluir para síndrome do choque da dengue. Entre 2 e 7 dias após o início, pode ocorrer defervescência da febre seguida de falência circulatória e hemorragias (pele, nariz). Queda da pressão de pulso para ≤20 mmHg é sinal inicial de choque. O choque, geralmente de curta duração, pode levar a óbito em 12-24h ou recuperação rápida com terapia adequada; sua persistência causa acidose metabólica e coagulação intravascular disseminada, com hemorragias graves (especialmente gastrointestinais).</p>
+
+<h4 class="subsub">Fatores de risco para dengue hemorrágica</h4>
+<ul>
+<li>Idade menor que 25 anos</li>
+<li>Sexo feminino</li>
+<li>Obesidade</li>
+<li>Dengue prévia</li>
+<li>Cepa virulenta</li>
+<li>Variantes HLA classe I</li>
+<li>Variante do gene fosfolipase 1</li>
+</ul>
+
+<h4 class="subsub">Classificação da dengue (grupos de manejo)</h4>
+<table>
+<tr><th>Grupo</th><th>Critérios</th></tr>
+<tr><td>A</td><td>Febre por até 7 dias com pelo menos 2 sintomas inespecíficos (cefaleia, prostração, dor retro-orbitária, exantema, mialgia, artralgia); ausência de manifestações hemorrágicas e prova do laço negativa; ausência de sinais de alerta</td></tr>
+<tr><td>B</td><td>Mesma febre/sintomas inespecíficos; manifestações hemorrágicas incluindo prova do laço, sem repercussão hemodinâmica; ausência de sinais de alerta</td></tr>
+<tr><td>C e D*</td><td>Mesma febre/sintomas inespecíficos; presença de sinal de alerta e/ou choque; manifestações hemorrágicas presentes ou ausentes</td></tr>
+</table>
+<p style="font-size:9pt;">*Pacientes do grupo D apresentam-se em choque franco com hipotensão.</p>
+
+<h4 class="subsub">Classificação da dengue hemorrágica</h4>
+<table>
+<tr><th>Grupo</th><th>Características</th></tr>
+<tr><td>1</td><td>Febre com sintomas inespecíficos e prova do laço positiva</td></tr>
+<tr><td>2</td><td>Sangramentos espontâneos, sem comprometimento hemodinâmico</td></tr>
+<tr><td>3</td><td>Sinais de insuficiência circulatória: hipotensão postural, pele fria e pegajosa, taquicardia</td></tr>
+<tr><td>4</td><td>Choque franco com pronunciada hipotensão arterial</td></tr>
+</table>
+
+<h3 class="sub">Diagnóstico</h3>
+<p>Baseia-se em sinais clínicos e exames laboratoriais. Leucopenia e neutropenia são frequentes e precoces; plaquetopenia e hemoconcentração indicam dengue grave. Exames específicos: isolamento viral (mais específico, identifica o sorotipo, coleta até o 5º dia); RT-PCR (identifica o sorotipo); sorologias (tornam-se reagentes ao final das manifestações clínicas, geralmente 6º dia — detecção de IgM por MAC-ELISA é a mais utilizada); pesquisa de antígeno NS1 (positivo até o 4º dia dos sintomas, alta especificidade).</p>
+
+<h4 class="subsub">Exames complementares — dengue clássica</h4>
+<ul>
+<li>Hemograma: leucopenia e neutropenia (pode haver linfocitose com atipia linfocitária); plaquetopenia</li>
+<li>Transaminases: podem apresentar aumentos discretos</li>
+</ul>
+<h4 class="subsub">Exames complementares — dengue hemorrágica</h4>
+<ul>
+<li>Transaminases pouco aumentadas e diminuição da albumina sérica</li>
+<li>Coagulograma: aumento do TP, TTPA e TT</li>
+<li>Hemograma: trombocitopenia grave (&lt;100.000/mm³); hemoconcentração (Ht &gt;40% em mulheres e aumento do hematócrito em 45% em homens)</li>
+<li>Prova do laço: insuflar manguito até o ponto médio entre as pressões sistólica e diastólica, manter por 5 min; marcar círculo do tamanho de uma moeda e verificar presença de múltiplas petéquias</li>
+</ul>
+
+<h3 class="sub">Tratamento</h3>
+<p>Não há tratamento específico; o manejo é sintomático, conforme a gravidade:</p>
+<ul>
+<li><b>Grupo A</b>: manejo ambulatorial, hidratação oral e sintomáticos</li>
+<li><b>Grupo B</b>: hidratação e observação hospitalar, com repetição de exames em 24-48h</li>
+<li><b>Grupo C</b>: hospitalização e hidratação vigorosa, com possíveis transfusões sanguíneas</li>
+<li><b>Grupo D</b>: reposição volêmica intensiva e administração de coloides em casos de choque refratário</li>
+</ul>
+
+<h3 class="sub">Prevenção, complicações e seguimento</h3>
+<p>A prevenção foca no controle do <i>Aedes aegypti</i> e conscientização da população para eliminar criadouros. A vacinação é recomendada para crianças de 9-16 anos em regiões endêmicas, após sorologia para dengue. Complicações incluem manifestações hemorrágicas, choque, disfunção hepática, encefalopatia e neuropatias periféricas. Pacientes com sinais de alerta ou condições clínicas específicas devem ser internados; monitorização em UTI é indicada para casos graves, com reavaliações frequentes.</p>
+
+<h4 class="subsub">Diferenciação clínica entre dengue, chikungunya e Zika (achados de alta certeza)</h4>
+<table>
+<tr><th>Certeza</th><th>Dengue</th><th>Chikungunya</th><th>Zika</th></tr>
+<tr><td>Alta</td><td>Trombocitopenia; aumento progressivo do hematócrito; leucopenia</td><td>Artralgia</td><td>Prurido</td></tr>
+<tr><td>Moderada</td><td>Anorexia/vômitos; dor abdominal; calafrios; hemorragia (pele/mucosas)</td><td>Rash, conjuntivite, artrite, mialgia/dor óssea</td><td>Rash, conjuntivite</td></tr>
+<tr><td>Baixa</td><td>Dor retro-ocular; hepatomegalia; cefaleia; diarreia; disgeusia; tosse; transaminases elevadas; prova do laço positiva</td><td>Hemorragia (pele/mucosas)</td><td>Adenopatia; faringite/odinofagia</td></tr>
+</table>
+
+<h4 class="subsub">Cinética diagnóstica (dias após início da febre)</h4>
+<p>Na infecção primária: NS1 e viremia detectáveis desde o início, com pico e declínio pela 1ª semana; IgM surge por volta do 4º-5º dia, pico próximo ao dia 10, declinando até ~90 dias; IgG surge mais tardiamente e persiste por longo prazo (até 365 dias e além). Na infecção secundária, IgG já se eleva mais precocemente e a IgM tende a ter perfil de menor magnitude, refletindo resposta de memória imunológica.</p>
+
+<div class="refs">
+<h3 class="sub" style="margin-top:8px;">Referências bibliográficas citadas na fonte</h3>
+<p>SANTOS, Norma Suely de O.; ROMANOS, Maria Teresa V.; WIGG, Marcia D.; AL, et. <b>Virologia Humana.</b> 4. ed. Rio de Janeiro: Guanabara Koogan, 2021. E-book. p.93. ISBN 9788527738354. Disponível em: https://app.minhabiblioteca.com.br/reader/books/9788527738354/. Acesso em: 20 out. 2025.</p>
+<p>HAJJAR, Ludhmila A. <b>Emergências em situação de desastres naturais.</b> Barueri: Manole, 2024. E-book. p.23. ISBN 9788520456736. Disponível em: https://app.minhabiblioteca.com.br/reader/books/9788520456736/. Acesso em: 23 out. 2025.</p>
+<p><b>Recomendations for laboratory detection and diagnosis of arbovirus infections in the Region of the Americas.</b> PAHO, 2023. Disponível em: https://iris.paho.org/bitstream/handle/10665.2/57555/9789275125878_eng.pdf?sequence=1&isAllowed=y.</p>
+<p><b>WHO guidelines for clinical management of arboviral diseases: dengue, chikungunya, Zika and yellow fever.</b> WHO, 2025. Disponível em: https://iris.who.int/server/api/core/bitstreams/634a55a5-327e-459b-a633-0650fe8ad6c9/content</p>
+</div>
+
+</body>
+</html>

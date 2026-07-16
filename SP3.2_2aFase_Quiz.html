@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.2 - Quiz</title>
+<style>
+  :root { --primary:#0b3d64; --ok:#1e8e5a; --bad:#c0392b; --bg:#f4f7fa; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 20px;
+    color: #1a1a1a;
+  }
+  header { text-align: center; margin-bottom: 20px; }
+  header h1 { color: var(--primary); margin-bottom: 2px; font-size: 22px; }
+  header p { color: #666; margin-top: 0; font-size: 13px; }
+  .wrap { max-width: 700px; margin: 0 auto; }
+  .progress-bar {
+    width: 100%; height: 8px; background: #dce8f2; border-radius: 4px; overflow: hidden; margin-bottom: 20px;
+  }
+  .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width .3s; }
+  .question-card {
+    background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 16px;
+  }
+  .q-counter { font-size: 12px; color: var(--primary); font-weight: bold; margin-bottom: 6px; }
+  .q-text { font-size: 15px; margin-bottom: 14px; line-height: 1.4; }
+  .option {
+    display: block; width: 100%; text-align: left; background: #f7fafc; border: 1px solid #d3e0eb;
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13.5px; cursor: pointer; transition: all .15s;
+  }
+  .option:hover:not(.answered) { background: #e8f0f8; }
+  .option.correct { background: #e3f6ea; border-color: var(--ok); color: #145c38; font-weight: bold; }
+  .option.incorrect { background: #fbe9e7; border-color: var(--bad); color: #7c241a; font-weight: bold; }
+  .option.disabled { cursor: default; }
+  .feedback {
+    margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 13px; line-height: 1.45; display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.right { background: #e3f6ea; border-left: 4px solid var(--ok); }
+  .feedback.wrong { background: #fbe9e7; border-left: 4px solid var(--bad); }
+  .nav-btn {
+    background: var(--primary); color: #fff; border: none; padding: 10px 22px; border-radius: 20px;
+    font-size: 13.5px; cursor: pointer; float: right; margin-top: 6px;
+  }
+  .nav-btn:disabled { background: #b7c6d3; cursor: default; }
+  .result-card {
+    background: #fff; border-radius: 10px; padding: 30px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .result-score { font-size: 40px; color: var(--primary); font-weight: bold; margin-bottom: 6px; }
+  .result-msg { font-size: 14px; color: #444; margin-bottom: 18px; }
+  .restart-btn {
+    background: var(--primary); color: #fff; border: none; padding: 10px 24px; border-radius: 20px; font-size: 13.5px; cursor: pointer;
+  }
+  footer { text-align: center; margin-top: 24px; font-size: 11px; color: #888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.2 — "O Retorno de Paulo"</h1>
+  <p>Quiz · 2ª Fase · Virologia / Dengue</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 3.2.</footer>
+
+<script>
+const questions = [
+  {
+    q: "Qual é o material genético presente em um único vírus?",
+    options: ["RNA e DNA simultaneamente", "RNA ou DNA, nunca os dois juntos", "Apenas RNA, em qualquer vírus", "Apenas DNA, em qualquer vírus"],
+    correct: 1,
+    explain: "O texto afirma: os vírus contêm, como material genético, RNA ou DNA, nunca os dois juntos."
+  },
+  {
+    q: "Qual estrutura viral protege o ácido nucleico e o carreia para dentro da célula hospedeira?",
+    options: ["Envelope", "Capsídeo", "Matriz proteica", "Peplômero"],
+    correct: 1,
+    explain: "Além de manter o genoma viral protegido, a função básica do capsídeo é carreá-lo para dentro da célula, para que ocorra sua síntese."
+  },
+  {
+    q: "Vírus com simetria icosaédrica e sem envelope, como o poliovírus, são os menores vírus conhecidos. Qual a faixa de tamanho descrita?",
+    options: ["100 a 200 nm", "18 a 60 nm", "300 a 400 nm", "5 a 10 nm"],
+    correct: 1,
+    explain: "\"Os vírus com simetria icosaédrica podem não apresentar envelope e são os menores vírus conhecidos (18 a 60 nm), como por exemplo, poliovírus.\""
+  },
+  {
+    q: "Segundo a Classificação de Baltimore, em qual classe estão os retrovírus?",
+    options: ["Classe IV", "Classe V", "Classe VI", "Classe VII"],
+    correct: 2,
+    explain: "\"Classe VI. Os retrovírus constituem a Classe VI; contêm um genoma diploide constituído de duas fitas de RNAfs+.\""
+  },
+  {
+    q: "Qual mecanismo de penetração viral é descrito como característico do poliovírus?",
+    options: ["Fusão direta com a membrana plasmática", "Passagem por poros na membrana endocítica", "Lise da membrana endocítica", "Translocação/penetração direta"],
+    correct: 1,
+    explain: "\"O quarto modo de penetração viral se dá pela passagem por poros na membrana endocítica, como ocorre com os poliovírus.\""
+  },
+  {
+    q: "Qual proteína viral é descrita como o exemplo mais convincente de toxina viral, atuando como enterotoxina?",
+    options: ["NS1 do FLUV", "Glicoproteína D (gD) do HHV-1", "NSP4 dos rotavírus", "Proteína σ1 dos reovírus"],
+    correct: 2,
+    explain: "\"O exemplo mais convincente de uma proteína viral com toxicidade intrínseca relevante para a doença é a proteína NSP4 dos rotavírus (...) atua como uma enterotoxina.\""
+  },
+  {
+    q: "Segundo a fonte, qual mecanismo está associado ao agravamento clínico em reinfecções por sorotipo diferente de dengue?",
+    options: ["Ativação predominante de células Th17", "Infecção de monócitos mediada por anticorpos, aumentando a taxa de infecção", "Ação da neuraminidase viral bloqueando a liberação do vírus", "Bloqueio direto de MHC I pelas células NK"],
+    correct: 1,
+    explain: "\"A imunidade a um sorotipo possibilita a multiplicação de outros sorotipos por meio da infecção dos monócitos; o vírus aumenta sua taxa de infecção mediada por anticorpos. São em casos como esses que a febre hemorrágica da dengue e a síndrome de choque da dengue ocorrem.\""
+  },
+  {
+    q: "Qual receptor do tipo Toll (TLR) reconhece a principal assinatura molecular viral, o RNA de fita dupla (RNAfd)?",
+    options: ["TLR9", "TLR7", "TLR3", "TLR4"],
+    correct: 2,
+    explain: "\"TLR3 reconhece a principal assinatura molecular viral, que é a molécula de RNAfd.\""
+  },
+  {
+    q: "Qual proteína adaptadora é recrutada pelo TLR3, diferentemente da maioria dos outros TLR (que recrutam MyD88)?",
+    options: ["MyD88", "TRIF", "MAVS", "STING"],
+    correct: 1,
+    explain: "\"O TLR3 recruta a proteína adaptadora TRIF (...), que também leva à ativação de fatores de transcrição, incluindo NF-κB, IRF3 e AP-1.\""
+  },
+  {
+    q: "Quais citocinas são classificadas como Interferon tipo I (IFN-I), elementos-chave da resposta antiviral?",
+    options: ["IFN-γ", "IFN-λ", "IFN-α e IFN-β", "IL-12"],
+    correct: 2,
+    explain: "\"Os IFN-I incluem os IFN-α e IFN-β, os quais são elementos-chave na resposta imunológica antiviral.\""
+  },
+  {
+    q: "Qual subpopulação de linfócitos TCD4+ produz predominantemente IL-17, IL-21 e IL-22, associada a respostas inflamatórias exacerbadas?",
+    options: ["Th1", "Th2", "Th17", "Treg"],
+    correct: 2,
+    explain: "\"As células Th17 produzem IL-17, IL-21 e IL-22 e participam ativamente de respostas inflamatórias.\""
+  },
+  {
+    q: "Qual marcador está associado ao fenômeno de exaustão funcional de linfócitos TCD8+ em infecções crônicas (ex.: HCV, HIV)?",
+    options: ["CD25", "PD-1", "FasL", "Foxp3"],
+    correct: 1,
+    explain: "\"A expressão de marcadores associados à exaustão, como o receptor PD-1, foi demonstrada em infecções crônicas, como aquelas causadas por HCV e HIV.\""
+  },
+  {
+    q: "A dengue é causada por um arbovírus de qual gênero, e quantos sorotipos principais são descritos?",
+    options: ["Alphavirus, 3 sorotipos", "Flavivirus, 4 sorotipos", "Bunyavirus, 5 sorotipos", "Togavirus, 2 sorotipos"],
+    correct: 1,
+    explain: "\"Transmitida por um arbovírus do gênero Flavivirus, possui quatro sorotipos: DEN-1, DEN-2, DEN-3, DEN-4.\""
+  },
+  {
+    q: "Segundo a fonte, quanto tempo dura a viremia na dengue?",
+    options: ["1 a 2 dias", "5 a 6 dias", "10 a 15 dias", "20 dias"],
+    correct: 1,
+    explain: "\"A viremia ocorre em 5 a 6 dias, causando febre, calafrios, cefaleia e mialgias.\""
+  },
+  {
+    q: "Qual das opções abaixo NÃO é listada como sinal de alarme da dengue?",
+    options: ["Dor abdominal intensa e contínua", "Vômitos persistentes", "Hipertensão arterial", "Sangramentos importantes"],
+    correct: 2,
+    explain: "O sinal de alarme listado é hipotensão arterial (e hipotensão postural) — não hipertensão."
+  },
+  {
+    q: "Qual valor de plaquetas é um dos critérios para definição de dengue grave?",
+    options: ["Menor que 150.000 céls./mm³", "Menor que 100.000 céls./mm³", "Menor que 50.000 céls./mm³", "Menor que 200.000 céls./mm³"],
+    correct: 1,
+    explain: "\"Plaquetopenia menor que 100.000 céls./mm3\" é um dos critérios para dengue grave."
+  },
+  {
+    q: "Até quando o antígeno NS1 pode ser detectado na dengue, segundo a fonte?",
+    options: ["Até o 2º dia de sintomas", "Até o 4º dia de sintomas", "Até o 7º dia de sintomas", "Até o 10º dia de sintomas"],
+    correct: 1,
+    explain: "\"Pesquisa de antígeno viral NS-1 positivo até o quarto dia dos sintomas.\""
+  },
+  {
+    q: "No manejo da dengue, qual grupo corresponde a \"hospitalização e hidratação vigorosa, com possíveis transfusões sanguíneas\"?",
+    options: ["Grupo A", "Grupo B", "Grupo C", "Grupo D"],
+    correct: 2,
+    explain: "\"Grupo C: Hospitalização e hidratação vigorosa, com possíveis transfusões sanguíneas.\""
+  },
+  {
+    q: "Segundo a tabela de diferenciação clínica apresentada, qual achado tem ALTA certeza de diferenciar a dengue de chikungunya e Zika?",
+    options: ["Artralgia", "Trombocitopenia", "Prurido", "Conjuntivite"],
+    correct: 1,
+    explain: "Achados de alta certeza para dengue: trombocitopenia, aumento progressivo do hematócrito e leucopenia (artralgia é de chikungunya; prurido, de Zika)."
+  },
+  {
+    q: "Qual grupo de arbovírus é descrito como mantendo ciclo epizoótico estabelecido em animais selvagens/domésticos, afetando humanos esporadicamente como hospedeiros \"dead-end\" (sem viremia suficiente para transmissão adiante)?",
+    options: ["DENV, CHIKV, ZIKV", "YFV, OROV, MAYV", "WNV, VEEV, EEEV, WEEV, SLEV", "HIV, HBV, HCV"],
+    correct: 2,
+    explain: "\"WNV, VEEV, EEEV, WEEV, and SLEV, among others, belong in this group\" (ciclo epizoótico, humanos como dead-end host)."
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) {
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  });
+}
+
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  const opts = document.querySelectorAll('.option');
+  opts.forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) {
+    score++;
+    fb.classList.add('right');
+    fb.innerHTML = `<b>Correto!</b> ${q.explain}`;
+  } else {
+    fb.classList.add('wrong');
+    fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`;
+  }
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = "";
+  if (pct >= 90) msg = "Excelente domínio do conteúdo!";
+  else if (pct >= 70) msg = "Bom desempenho — revise os pontos que errou.";
+  else if (pct >= 50) msg = "Desempenho razoável — vale a pena revisar o resumo.";
+  else msg = "Recomenda-se revisar o material com mais atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
