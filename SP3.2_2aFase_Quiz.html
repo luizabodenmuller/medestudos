@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <title>SP 3.2 - Quiz</title>
 <style>
-  :root { --primary:#0b3d64; --ok:#1e8e5a; --bad:#c0392b; --bg:#f4f7fa; }
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
   * { box-sizing: border-box; }
   body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     background: var(--bg);
     margin: 0;
     padding: 20px;
@@ -18,7 +18,7 @@
   header p { color: #666; margin-top: 0; font-size: 13px; }
   .wrap { max-width: 700px; margin: 0 auto; }
   .progress-bar {
-    width: 100%; height: 8px; background: #dce8f2; border-radius: 4px; overflow: hidden; margin-bottom: 20px;
+    width: 100%; height: 8px; background: #f0dbe3; border-radius: 4px; overflow: hidden; margin-bottom: 20px;
   }
   .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width .3s; }
   .question-card {
@@ -27,10 +27,10 @@
   .q-counter { font-size: 12px; color: var(--primary); font-weight: bold; margin-bottom: 6px; }
   .q-text { font-size: 15px; margin-bottom: 14px; line-height: 1.4; }
   .option {
-    display: block; width: 100%; text-align: left; background: #f7fafc; border: 1px solid #d3e0eb;
+    display: block; width: 100%; text-align: left; background: #faf7f8; border: 1px solid #e6c9d3;
     border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13.5px; cursor: pointer; transition: all .15s;
   }
-  .option:hover:not(.answered) { background: #e8f0f8; }
+  .option:hover:not(.answered) { background: #f7ecf0; }
   .option.correct { background: #e3f6ea; border-color: var(--ok); color: #145c38; font-weight: bold; }
   .option.incorrect { background: #fbe9e7; border-color: var(--bad); color: #7c241a; font-weight: bold; }
   .option.disabled { cursor: default; }
@@ -44,7 +44,7 @@
     background: var(--primary); color: #fff; border: none; padding: 10px 22px; border-radius: 20px;
     font-size: 13.5px; cursor: pointer; float: right; margin-top: 6px;
   }
-  .nav-btn:disabled { background: #b7c6d3; cursor: default; }
+  .nav-btn:disabled { background: #d9b3c0; cursor: default; }
   .result-card {
     background: #fff; border-radius: 10px; padding: 30px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
