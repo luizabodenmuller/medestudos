@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.3 - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:22px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.3 — "Quando tudo sai do eixo"</h1>
+  <p>Quiz · 2ª Fase · Resistência Bacteriana / Microbiota</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 3.3.</footer>
+
+<script>
+const questions = [
+  {
+    q: "Segundo a fonte, qual é o principal mecanismo pelo qual o MRSA ganhou resistência à meticilina?",
+    options: ["Produção de uma nova β-lactamase", "Modificação da proteína de ligação à penicilina (PBP)", "Bomba de efluxo específica para meticilina", "Redução das porinas da membrana"],
+    correct: 1,
+    explain: "\"O principal mecanismo pelo qual o MRSA ganhou ascendência sobre a meticilina não foi por meio de uma nova enzima de inativação, mas sim por meio de uma modificação da proteína de ligação à penicilina (PBP).\""
+  },
+  {
+    q: "Qual estrutura é o alvo das enzimas β-lactamases?",
+    options: ["A subunidade ribossômica 30S", "A DNA-girase", "O anel β-lactâmico", "As porinas da membrana externa"],
+    correct: 2,
+    explain: "Penicilinas, cefalosporinas e carbapenêmicos compartilham o anel β-lactâmico, alvo das β-lactamases, que o hidrolisam seletivamente."
+  },
+  {
+    q: "Sobre a genética da resistência, o que caracteriza a resistência conferida por plasmídeos transmissíveis?",
+    options: ["Resistência a uma única classe (resistência cruzada)", "Resistência múltipla a classes diferentes de antibióticos", "Resistência apenas a β-lactâmicos", "Resistência sempre reversível"],
+    correct: 1,
+    explain: "Os plasmídeos codificam determinantes de resistência para várias famílias não relacionadas, permitindo resistência 'múltipla' a muitos fármacos diferentes de uma vez (a chamada 'resistência infecciosa')."
+  },
+  {
+    q: "Qual antibiótico é descrito como capaz de neutralizar a eficácia das pílulas anticoncepcionais?",
+    options: ["Vancomicina", "Rifampicina", "Ciprofloxacino", "Meticilina"],
+    correct: 1,
+    explain: "\"Por exemplo, a rifampicina neutraliza a eficácia das pílulas anticoncepcionais.\""
+  },
+  {
+    q: "Por que as tetraciclinas não são indicadas durante a gravidez?",
+    options: ["Causam surdez no feto", "Podem desencadear dano hepático materno", "Reduzem a pressão arterial", "Não têm efeito antibacteriano em gestantes"],
+    correct: 1,
+    explain: "\"As tetraciclinas não são indicadas para uso em crianças que podem apresentar manchas amarronzadas nos dentes, ou durante a gravidez, uma vez que podem desencadear dano hepático materno.\""
+  },
+  {
+    q: "Qual conjunto de sítios corporais é normalmente estéril em pessoas sadias?",
+    options: ["Boca, faringe e intestino grosso", "Trato respiratório inferior, SNC, sangue, fígado, rins e bexiga", "Pele, uretra anterior e vagina", "Estômago, íleo e cólon"],
+    correct: 1,
+    explain: "\"Os sítios estéreis são: trato respiratório inferior (traqueia, brônquios e pulmões), Sistema Nervoso Central (SNC), sangue, baço, fígado, rins e bexiga.\""
+  },
+  {
+    q: "Qual é o sítio do corpo com o maior número de microrganismos?",
+    options: ["A cavidade oral", "O estômago", "O intestino grosso", "A pele"],
+    correct: 2,
+    explain: "O intestino grosso é o sítio do corpo com o maior número de microrganismos, sendo a maioria (96 a 99%) composta por bactérias anaeróbias."
+  },
+  {
+    q: "Na vagina, qual gênero bacteriano mantém o pH ácido, inibindo o crescimento de patógenos como a Candida albicans?",
+    options: ["Staphylococcus", "Gardnerella", "Lactobacillus", "Streptococcus"],
+    correct: 2,
+    explain: "\"A vagina é colonizada principalmente pelos Lactobacillus, os quais ajudam na manutenção do pH normal vaginal, inibindo o crescimento de microrganismos patogênicos.\""
+  },
+  {
+    q: "Como se define o microbioma fundamental (core microbiome)?",
+    options: ["As espécies presentes em 100% dos indivíduos", "As espécies presentes em um local específico em 95% ou mais dos indivíduos", "Apenas as bactérias anaeróbias do cólon", "As espécies transitórias da pele"],
+    correct: 1,
+    explain: "O microbioma fundamental é definido como as espécies que estão presentes em um local específico em 95% ou mais dos indivíduos."
+  },
+  {
+    q: "Bebês amamentados exclusivamente com leite materno têm predominância de qual microrganismo na microbiota intestinal?",
+    options: ["Escherichia coli", "Clostridium difficile", "Bifidobactérias", "Bacteroides fragilis"],
+    correct: 2,
+    explain: "\"Bifidobactérias são os principais microrganismos encontrados na microbiota intestinal de bebês alimentados exclusivamente com leite materno.\""
+  },
+  {
+    q: "Segundo a fonte, qual o impacto estimado da dieta sobre a microbiota, comparado ao da genética?",
+    options: ["Dieta 12% vs. genética 57%", "Dieta 57% vs. genética 12%", "Ambas 50%", "Dieta 90% vs. genética 10%"],
+    correct: 1,
+    explain: "\"Estima-se que a dieta tenha 57% de impacto sobre a microbiota versus 12% do impacto da genética.\""
+  },
+  {
+    q: "O que é o fenômeno conhecido como 'leaky gut'?",
+    options: ["Aumento da produção de muco intestinal", "Aumento da permeabilidade intestinal por afrouxamento das tight junctions", "Redução da motilidade do cólon", "Proliferação de bifidobactérias"],
+    correct: 1,
+    explain: "O leaky gut é o desequilíbrio da barreira intestinal (afrouxamento das tight junctions), permitindo que bactérias e LPS atinjam a corrente sanguínea e ativem o sistema imune, causando inflamação."
+  },
+  {
+    q: "Quais são os principais ácidos graxos de cadeia curta (AGCC) produzidos pela fermentação de fibras?",
+    options: ["Palmítico, oleico e linoleico", "Acetato, propionato e butirato", "Cólico, quenodesoxicólico e litocólico", "Glutâmico, aspártico e cítrico"],
+    correct: 1,
+    explain: "Os AGCC produzidos são principalmente acetato, propionato e butirato, que nutrem os enterócitos, têm ação anti-inflamatória e reforçam a barreira intestinal."
+  },
+  {
+    q: "Qual conceito descreve o desequilíbrio da microbiota (redução da diversidade ou supercrescimento de espécies nocivas)?",
+    options: ["Colonização", "Disbiose", "Simbiose", "Comensalismo"],
+    correct: 1,
+    explain: "Disbiose é a perturbação ou distúrbio da microbiota — desequilíbrio entre o número de bactérias protetoras e agressoras."
+  },
+  {
+    q: "Qual bactéria prolifera após antibioticoterapia (ex.: clindamicina) causando diarreia associada a antibióticos e colite pseudomembranosa?",
+    options: ["Escherichia coli", "Clostridioides difficile", "Staphylococcus epidermidis", "Lactobacillus acidophilus"],
+    correct: 1,
+    explain: "\"Após o tratamento com clindamicina, o crescimento aumentado de Clostridium difficile, o qual sobrevive ao tratamento, pode dar origem a uma diarreia associada ao antibiótico ou, mais seriamente, à colite pseudomembranosa.\""
+  },
+  {
+    q: "Qual tratamento, aprovado pela FDA em 2022, é descrito como muito mais eficaz que antibióticos para infecções recorrentes por C. difficile?",
+    options: ["Vancomicina oral", "Transplante fecal", "Probióticos de venda livre", "Prebióticos (inulina)"],
+    correct: 1,
+    explain: "\"Como os transplantes fecais são muito mais efetivos do que os tratamentos com antibióticos... Em 2022, a FDA aprovou o transplante fecal para o tratamento de infecções recorrentes por C. difficile.\""
+  },
+  {
+    q: "Segundo a hipótese da higiene, o que a exposição precoce das crianças a microrganismos faz?",
+    options: ["Aumenta o risco de alergias", "Treina o sistema imune para se tornar tolerante a micróbios e antígenos inofensivos", "Não tem efeito sobre o sistema imune", "Elimina a microbiota residente"],
+    correct: 1,
+    explain: "A hipótese da higiene postula que a exposição das crianças a microrganismos é essencial para treinar o sistema imune para que este se torne tolerante a micróbios e antígenos inofensivos."
+  },
+  {
+    q: "Quais dois filos bacterianos compõem cerca de 90% do microbioma humano?",
+    options: ["Proteobacteria e Actinobacteria", "Bacteroidetes e Firmicutes", "Fusobacteria e Verrucomicrobia", "Firmicutes e Proteobacteria"],
+    correct: 1,
+    explain: "A microbiota humana consiste principalmente em bactérias dos filos Bacteroidetes e Firmicutes, que compõem cerca de 90% do microbioma."
+  },
+  {
+    q: "Qual a definição de probióticos segundo a fonte?",
+    options: ["Fibras não digeríveis que estimulam bactérias benéficas", "Microrganismos vivos que, em quantidades adequadas, conferem benefício à saúde do hospedeiro", "Microrganismos mortos e seus componentes", "Substâncias antibacterianas produzidas pela microbiota"],
+    correct: 1,
+    explain: "Probióticos são microrganismos vivos que, quando administrados em quantidades adequadas, conferem benefício à saúde do hospedeiro."
+  },
+  {
+    q: "O que caracteriza os posbióticos?",
+    options: ["Microrganismos vivos colonizadores", "Substratos seletivamente fermentados", "Preparação de microrganismos mortos/inativados e/ou seus componentes que conferem benefício à saúde", "Combinação de probiótico com prebiótico"],
+    correct: 2,
+    explain: "Posbiótico é uma preparação de microrganismos mortos (inativados) e/ou seus componentes que conferem um benefício à saúde do hospedeiro."
+  },
+  {
+    q: "Segundo a Anvisa, qual a população probiótica mínima recomendada por porção diária de alimento?",
+    options: ["10² a 10³ UFC", "10⁴ a 10⁵ UFC", "10⁸ a 10⁹ UFC", "10¹² a 10¹³ UFC"],
+    correct: 2,
+    explain: "A Anvisa recomenda que uma população probiótica mínima variando de 10⁸ a 10⁹ UFC por porção diária de alimento seja necessária para obter efeito benéfico à saúde intestinal."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.3 - Flashcards</title>
+<style>
+  :root { --primary:#7a1f3d; --primary-light:#9c3355; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:22px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .controls { max-width:900px; margin:0 auto 18px auto; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .filter-btn { background:#fff; border:1px solid #e6c9d3; color:var(--primary); padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { background:#f7ecf0; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .progress-wrap { max-width:900px; margin:0 auto 20px auto; text-align:center; font-size:13px; color:#444; }
+  .progress-bar { width:100%; max-width:400px; margin:6px auto 0 auto; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .2s; }
+  .deck { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card-outer { perspective:1200px; height:210px; }
+  .card-outer.hidden { display:none; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card-outer.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; padding:16px; display:flex; flex-direction:column; box-shadow:0 2px 6px rgba(0,0,0,0.12); overflow:auto; }
+  .card-front { background:#fff; border-top:5px solid var(--primary); }
+  .card-back { background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-light); margin-bottom:8px; font-weight:bold; }
+  .card-back .card-cat { color:#eeccd7; }
+  .card-text { font-size:13.5px; line-height:1.4; flex:1; }
+  .card-hint { font-size:10px; color:#999; text-align:center; margin-top:6px; }
+  .card-back .card-hint { color:#d9b3c0; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.3 — "Quando tudo sai do eixo"</h1>
+  <p>Flashcards · 2ª Fase · Resistência Bacteriana / Microbiota</p>
+</header>
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="controls" id="filterControls"></div>
+<div class="deck" id="deck"></div>
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 3.3.</footer>
+
+<script>
+const cards = [
+  {cat:"Resistência Bacteriana", front:"Como se define, no ambiente clínico, um microrganismo resistente?", back:"Aquele que não será inibido ou morto por um agente antibacteriano em concentrações atingíveis no corpo após a dosagem normal."},
+  {cat:"Resistência Bacteriana", front:"Qual a diferença entre resistência inata e adquirida?", back:"Inata: a bactéria já nasce resistente (sem alvo suscetível, impermeável ao agente ou o inativa enzimaticamente). Adquirida: a bactéria desenvolve ou adquire resistência (mutação ou aquisição de genes)."},
+  {cat:"Resistência Bacteriana", front:"Quais são os principais mecanismos de resistência bacteriana?", back:"Inativação enzimática do fármaco; alteração do alvo; efluxo ativo (bombas); redução da permeabilidade da membrana; e aquisição de genes de resistência (plasmídeos, transpósons, integrons)."},
+  {cat:"Resistência Bacteriana", front:"O que são β-lactamases e qual sua ação?", back:"Enzimas (cerca de 200 variações) que hidrolisam seletivamente o anel β-lactâmico de penicilinas, cefalosporinas e carbapenêmicos, inativando esses antibióticos."},
+  {cat:"Resistência Bacteriana", front:"Qual o principal mecanismo pelo qual o MRSA se tornou resistente à meticilina?", back:"Modificação da proteína de ligação à penicilina (PBP): desenvolveram uma PBP adicional que se liga fracamente ao antibiótico, mas permite a síntese de parede celular. Não foi por nova enzima de inativação."},
+  {cat:"Resistência Bacteriana", front:"Que toxina o MRSA associado à comunidade produz e qual seu efeito?", back:"A leucocidina, que destrói neutrófilos (defesa inata primária contra infecções)."},
+  {cat:"Resistência Bacteriana", front:"Como funcionam as bombas de efluxo?", back:"Proteínas de membrana (principalmente em Gram-negativas) que expelem os antibióticos, impedindo que atinjam concentração efetiva. Originalmente observadas em tetraciclinas, mas conferem resistência a quase todas as classes."},
+  {cat:"Resistência Bacteriana", front:"Por que Gram-negativas são mais resistentes a antibióticos que Gram-positivas?", back:"Pela membrana externa exterior aos peptidoglicanos, que restringe a absorção de grandes moléculas às porinas. Mutações nas porinas podem impedir a entrada do antibiótico."},
+  {cat:"Resistência Bacteriana", front:"O que caracteriza a resistência cruzada?", back:"Resistência a uma única classe de antimicrobianos (compostos estruturalmente relacionados), geralmente resultante de uma mutação cromossômica."},
+  {cat:"Resistência Bacteriana", front:"Como os plasmídeos transmissíveis geram resistência múltipla?", back:"Codificam determinantes de resistência para várias famílias não relacionadas de antibióticos, permitindo que a célula adquira resistência a muitos fármacos de uma vez ('resistência infecciosa'). Ex.: β-lactamase TEM-1."},
+  {cat:"Resistência Bacteriana", front:"O que são transpósons e integrons na genética da resistência?", back:"Transpósons: 'genes saltantes' que geram cópias integradas a cromossomos/plasmídeos. Integrons: estruturas que capturam e rearranjam 'cassetes' de genes de resistência via integrase (int) e sítio att."},
+  {cat:"Resistência Bacteriana", front:"Em que estrutura estão organizados os genes estafilocócicos de resistência à meticilina?", back:"No cassete cromossômico estafilocócico mec (SCCmec), inserido em um único sítio-alvo no cromossomo."},
+  {cat:"Uso de Antibióticos", front:"O que é o índice terapêutico?", back:"O julgamento entre os riscos e os benefícios envolvidos na administração de qualquer fármaco."},
+  {cat:"Uso de Antibióticos", front:"Qual antibiótico neutraliza a eficácia das pílulas anticoncepcionais?", back:"A rifampicina."},
+  {cat:"Uso de Antibióticos", front:"Por que as tetraciclinas não são indicadas para crianças e gestantes?", back:"Em crianças podem causar manchas amarronzadas nos dentes; na gravidez podem desencadear dano hepático materno."},
+  {cat:"Uso de Antibióticos", front:"O que é sinergismo entre antibióticos? Dê um exemplo.", back:"Quando dois fármacos juntos têm efeito mais intenso que isolados. Ex.: na endocardite bacteriana, penicilina + estreptomicina — o dano à parede pela penicilina facilita a penetração da estreptomicina."},
+  {cat:"Uso de Antibióticos", front:"Quando o uso profilático de antibióticos é apropriado?", back:"Em poucas circunstâncias e por período curto (1-2 dias): (1) suscetíveis expostos a patógenos específicos (meningite, tuberculose); (2) suscetibilidade aumentada (neutropênicos); (3) cobertura pré-operatória."},
+  {cat:"Uso de Antibióticos", front:"Cite estratégias de prevenção da resistência antimicrobiana.", back:"Completar sempre o tratamento; não usar sobras nem antibiótico de outra pessoa; evitar prescrições desnecessárias; preferir antibiótico mais específico ao amplo espectro; comitês hospitalares de monitoramento."},
+  {cat:"Microbiota Normal", front:"O que é a microbiota normal?", back:"População de microrganismos comensais (relação simbiótica) que coloniza o corpo de forma harmônica, desde o nascimento até a morte, sem necessariamente causar doença."},
+  {cat:"Microbiota Normal", front:"Qual a diferença entre microbiota residente e transitória?", back:"Residente (permanente): coloniza o corpo de forma estável. Transitória: permanece por horas, dias ou semanas, geralmente não patogênica."},
+  {cat:"Microbiota Normal", front:"Como o tipo de parto influencia a colonização inicial do RN?", back:"No parto normal, a pele é colonizada pela microbiota fecal materna do canal do parto. Na cesariana, sem esse contato, a colonização da pele é mais tardia."},
+  {cat:"Microbiota Normal", front:"Quais são os sítios corporais normalmente estéreis?", back:"Trato respiratório inferior (traqueia, brônquios, pulmões), SNC, sangue, baço, fígado, rins e bexiga."},
+  {cat:"Microbiota Normal", front:"Qual bactéria predomina na pele e qual mantém o pH ácido vaginal?", back:"Na pele: Staphylococcus epidermidis. Na vagina: Lactobacillus, que mantém o pH ácido inibindo o crescimento de patógenos."},
+  {cat:"Microbiota Normal", front:"Qual sítio do corpo tem o maior número de microrganismos?", back:"O intestino grosso (cólon), com predomínio de bactérias anaeróbias (96-99%)."},
+  {cat:"Microbiota Normal", front:"O que é antagonismo microbiano (exclusão competitiva)?", back:"A microbiota normal impede o crescimento de patógenos ao competir por nutrientes e espaço, produzir substâncias prejudiciais (bacteriocinas, ácidos graxos) e afetar pH e disponibilidade de oxigênio."},
+  {cat:"Microbiota Normal", front:"Como a microbiota fornece resistência a doenças (3 maneiras)?", back:"(1) Exclusão competitiva; (2) produção de substâncias que inibem/matam patógenos (bacteriocinas, peróxido de hidrogênio); (3) o desenvolvimento do sistema imune depende da presença de microbiota."},
+  {cat:"Microbiota Normal", front:"Quais vitaminas as bactérias intestinais produzem?", back:"Vitaminas do complexo B e vitamina K."},
+  {cat:"Microbiota Normal", front:"O que é o microbioma fundamental (core microbiome)?", back:"As espécies presentes em um local específico do corpo em 95% ou mais dos indivíduos; constituem a maior proporção da população microbiana."},
+  {cat:"Microbiota Normal", front:"O que significa redundância funcional da microbiota?", back:"A diversidade taxonômica é grande, mas as propriedades funcionais são altamente conservadas — funções necessárias podem ser fornecidas por diversos membros da microbiota."},
+  {cat:"Desenvolvimento/Modulação", front:"O que é o leaky gut e qual sua consequência?", back:"Aumento da permeabilidade intestinal (afrouxamento das tight junctions) que permite a passagem de LPS (de bactérias Gram-negativas) para a corrente sanguínea, gerando inflamação sistêmica, estresse oxidativo e neuroinflamação."},
+  {cat:"Desenvolvimento/Modulação", front:"Que microrganismos predominam na microbiota de bebês amamentados exclusivamente ao seio?", back:"As bifidobactérias. Os alimentados com fórmula têm mais E. coli, C. difficile, B. fragilis e Lactobacillus."},
+  {cat:"Desenvolvimento/Modulação", front:"Qual o principal fator modificável da microbiota e seu impacto estimado?", back:"A dieta, com cerca de 57% de impacto sobre a microbiota, versus 12% da genética."},
+  {cat:"Desenvolvimento/Modulação", front:"O que são AGCC e qual sua importância?", back:"Ácidos graxos de cadeia curta (acetato, propionato, butirato), produzidos pela fermentação de fibras. Nutrem os enterócitos, têm ação anti-inflamatória (aumentam IL-10 e células T) e reforçam a barreira intestinal."},
+  {cat:"Desenvolvimento/Modulação", front:"Como a atividade física impacta a microbiota?", back:"Aumenta a diversidade e as bactérias benéficas (Bifidobacterium, Lactobacillus), a produção de AGCC e de IL-10 (anti-inflamatória). A OMS recomenda ≥150 min/semana de atividade moderada ou ≥75 min de vigorosa."},
+  {cat:"Desenvolvimento/Modulação", front:"Cite um medicamento com impacto positivo na microbiota.", back:"A metformina (tratamento do diabetes tipo 2), que aumenta a produção de AGCC, favorecendo a saúde intestinal."},
+  {cat:"Desenvolvimento/Modulação", front:"Quais as duas dietas consideradas protetoras da microbiota?", back:"A dieta mediterrânea (rica em vegetais, azeite de oliva extravirgem e peixes) e a dieta plant-based (alimentos naturais, orgânicos e integrais, rica em fibras)."},
+  {cat:"Conceitos/Disbiose", front:"Diferencie colonização, disbiose e infecção.", back:"Colonização: presença de microrganismos sem causar doença. Disbiose: desequilíbrio da microbiota (redução da diversidade ou supercrescimento de espécies nocivas). Infecção: invasão e multiplicação com resposta inflamatória e sintomas clínicos."},
+  {cat:"Conceitos/Disbiose", front:"O que é a hipótese da higiene?", back:"A exposição precoce das crianças a microrganismos é essencial para treinar o sistema imune à tolerância. Sem exposição, o sistema imune reage exageradamente, favorecendo hipersensibilidade (alergias, asma)."},
+  {cat:"Conceitos/Disbiose", front:"Qual bactéria prolifera após antibioticoterapia causando diarreia e colite pseudomembranosa?", back:"O Clostridioides difficile, que sobrevive ao tratamento (ex.: clindamicina), prolifera e expressa enterotoxinas, levando à inflamação do cólon."},
+  {cat:"Conceitos/Disbiose", front:"Qual o tratamento eficaz para infecção recorrente por C. difficile?", back:"O transplante fecal (mais eficaz que antibióticos), aprovado pela FDA em 2022 para infecções recorrentes por C. difficile."},
+  {cat:"Conceitos/Disbiose", front:"O que é endotoxemia metabólica?", back:"Disfunção causada pela passagem de LPS (de bactérias Gram-negativas) através do epitélio para a circulação sistêmica, ativando vias inflamatórias e gerando inflamação crônica subclínica."},
+  {cat:"Conceitos/Disbiose", front:"Quais dois filos compõem cerca de 90% do microbioma humano?", back:"Bacteroidetes e Firmicutes."},
+  {cat:"Conceitos/Disbiose", front:"Por que a candidíase pode surgir após uso de antibióticos?", back:"Os antibióticos eliminam bactérias competidoras (ex.: lactobacilos vaginais), alterando o pH e permitindo o crescimento excessivo de Candida albicans."},
+  {cat:"Prebióticos/Probióticos", front:"O que são prebióticos e quais os principais?", back:"Substratos seletivamente utilizados por microrganismos do hospedeiro, conferindo benefícios à saúde. Principais: frutanos do tipo inulina (FOS, oligofrutose, inulina), galacto-oligossacarídeos (GOS) e lactulose."},
+  {cat:"Prebióticos/Probióticos", front:"Cite fontes alimentares de prebióticos.", back:"Alho, alho-poró, aspargos, chicória, cebola, trigo, banana, leite e derivados, melancia, laranja, batata, alcachofra, centeio e cevada."},
+  {cat:"Prebióticos/Probióticos", front:"O que são probióticos?", back:"Microrganismos vivos que, quando administrados em quantidades adequadas, conferem benefício à saúde do hospedeiro. Comumente Bifidobacterium, Lactobacillus e leveduras (Saccharomyces)."},
+  {cat:"Prebióticos/Probióticos", front:"Qual a dose de probióticos recomendada pela Anvisa?", back:"Uma população mínima de 10⁸ a 10⁹ UFC (unidades formadoras de colônias) por porção diária de alimento."},
+  {cat:"Prebióticos/Probióticos", front:"Por que os efeitos dos probióticos são específicos de cada cepa?", back:"O benefício à saúde atribuído a uma cepa não se aplica necessariamente a outra, mesmo dentro da mesma espécie. Além disso, os efeitos costumam ser de curto prazo — cessando o consumo, a microbiota retorna ao estado original."},
+  {cat:"Prebióticos/Probióticos", front:"O que é um simbiótico e quais seus dois tipos?", back:"Mistura de microrganismos vivos e substratos seletivamente utilizados pela microbiota. Complementar (probiótico + prebiótico, alvo autóctones); sinérgico (substrato para os microrganismos coadministrados, alóctones)."},
+  {cat:"Prebióticos/Probióticos", front:"O que são posbióticos?", back:"Preparação de microrganismos mortos/inativados e/ou seus componentes que conferem benefício à saúde do hospedeiro (não precisam ser derivados de probióticos)."},
+  {cat:"Prebióticos/Probióticos", front:"O que são psicobióticos?", back:"Agentes bióticos (probióticos, prebióticos, simbióticos, posbióticos) com benefícios à saúde mental, atuando via produção de neurotransmissores, AGCC, modulação do eixo HHA (cortisol) e ação anti-inflamatória (estímulo à IL-10)."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeCat = cat; renderFilters(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+renderFilters();
+render();
+</script>
+</body>
+</html>
