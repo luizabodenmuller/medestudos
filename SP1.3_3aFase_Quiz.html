@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 1.3 – Quiz</title>
+<style>
+  :root{ --primary:#7a1f3d; --primary-light:#f0dbe3; --bg:#faf7f8; --green:#2e7d32; --red:#c62828; }
+  *{box-sizing:border-box;}
+  body{ font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); margin:0; padding:20px; color:#222; }
+  .wrap{ max-width:720px; margin:0 auto; }
+  h1{ color:var(--primary); font-size:22px; margin-bottom:2px; }
+  .subtitle{ color:#777; font-size:13px; margin-bottom:18px; }
+  .progress{ font-size:13px; color:#555; font-weight:600; margin-bottom:6px; display:flex; justify-content:space-between; }
+  .progress-bar{ height:8px; background:#eee; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill{ height:100%; background:var(--primary); transition:width .3s; }
+  .qcard{ background:#fff; border-radius:16px; padding:24px; box-shadow:0 6px 18px rgba(0,0,0,.08); border:2px solid var(--primary-light); }
+  .qtext{ font-size:17px; font-weight:600; margin-bottom:18px; line-height:1.4; }
+  .opt{ display:block; width:100%; text-align:left; padding:12px 16px; margin-bottom:10px; border-radius:10px; border:2px solid #e2c8d3; background:#fff; font-size:14.5px; cursor:pointer; transition:.15s; }
+  .opt:hover:not(.disabled){ background:var(--primary-light); }
+  .opt.correct{ background:#e8f5e9; border-color:var(--green); color:var(--green); font-weight:600; }
+  .opt.incorrect{ background:#fdecea; border-color:var(--red); color:var(--red); font-weight:600; }
+  .opt.disabled{ cursor:default; }
+  .feedback{ margin-top:14px; padding:12px 16px; border-radius:10px; font-size:13.8px; line-height:1.45; display:none; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background:#e8f5e9; color:#1b5e20; }
+  .feedback.no{ background:#fdecea; color:#8e1a1a; }
+  .nextBtn{ margin-top:16px; background:var(--primary); color:#fff; border:none; padding:11px 22px; border-radius:10px; font-size:14.5px; font-weight:600; cursor:pointer; display:none; }
+  .nextBtn.show{ display:inline-block; }
+  .result{ text-align:center; padding:30px 20px; }
+  .result h2{ color:var(--primary); font-size:26px; }
+  .score-circle{ width:140px; height:140px; border-radius:50%; border:8px solid var(--primary); display:flex; align-items:center; justify-content:center; margin:20px auto; font-size:30px; font-weight:700; color:var(--primary); }
+  .restartBtn{ margin-top:10px; background:var(--primary); color:#fff; border:none; padding:12px 26px; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+  .msg{ font-size:15px; color:#555; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📝 SP 1.3 – "Que seu remédio seja seu alimento..."</h1>
+  <div class="subtitle">Quiz de revisão — 3ª Fase</div>
+
+  <div id="quizArea">
+    <div class="progress">
+      <span id="qCounter">Questão 1 / 24</span>
+      <span id="scoreLive">Acertos: 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="qcard">
+      <div class="qtext" id="qtext"></div>
+      <div id="optsContainer"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nextBtn" id="nextBtn">Próxima questão ▶</button>
+    </div>
+  </div>
+
+  <div id="resultArea" style="display:none;">
+    <div class="qcard result">
+      <h2>Quiz concluído!</h2>
+      <div class="score-circle" id="scoreCircle"></div>
+      <div class="msg" id="finalMsg"></div>
+      <button class="restartBtn" id="restartBtn">🔄 Refazer quiz</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const QUIZ = [
+{
+  q:"Como o crescimento é considerado, de modo geral, quanto ao que representa?",
+  opts:["Aumento do tamanho corporal, cessando com o fim do aumento em altura","Apenas a maturação neurológica","Sinônimo exato de desenvolvimento","Processo exclusivamente genético"],
+  correct:0,
+  exp:"De um modo geral, considera-se o crescimento como aumento do tamanho corporal, cessando com o término do aumento em altura (crescimento linear)."
+},
+{
+  q:"Em crianças menores de 5 anos, o que tem maior influência na expressão do potencial de crescimento?",
+  opts:["Os fatores genéticos","Os fatores ambientais","A idade óssea","O sexo da criança"],
+  correct:1,
+  exp:"Nas crianças menores de cinco anos, a influência dos fatores ambientais é muito mais importante do que a dos fatores genéticos para expressão do potencial de crescimento."
+},
+{
+  q:"A partir de que idade pode se iniciar o primeiro sinal puberal no menino (crescimento testicular)?",
+  opts:["7 anos","9 anos","11 anos","13 anos"],
+  correct:1,
+  exp:"O primeiro sinal puberal no menino é o crescimento testicular, que pode iniciar-se a partir dos 9 anos, quando o testículo atinge 4 cm³ no orquidômetro de Prader."
+},
+{
+  q:"Por volta do primeiro aniversário, como o comprimento e a circunferência cefálica evoluíram desde o nascimento?",
+  opts:["Comprimento aumentou 20%; PC aumentou 5 cm","Comprimento aumentou 50%; PC aumentou 10 cm","Comprimento dobrou; PC aumentou 15 cm","Não há mudança significativa"],
+  correct:1,
+  exp:"Por volta do primeiro aniversário, o peso já triplicou, o comprimento aumentou em 50% e a circunferência cefálica aumentou 10 cm."
+},
+{
+  q:"O que significa uma criança estar no percentil 30 de peso para sua idade e sexo?",
+  opts:["Que ela está desnutrida","Que 30% das crianças têm peso abaixo e 70% têm peso acima","Que ela está no percentil ideal","Que seu peso está 30% acima da média"],
+  correct:1,
+  exp:"Uma criança com o peso no percentil 30 significa que 30% das crianças daquele mesmo sexo e idade têm o peso abaixo, enquanto 70% têm o peso acima."
+},
+{
+  q:"Segundo a classificação de Waterlow (1973), como se define 'stunting' (retardo de crescimento)?",
+  opts:["P/E inadequado, menor que 90%","E/I inadequado, menor que 95%","IMC acima de 2 escores Z","P/I menor que 60%"],
+  correct:1,
+  exp:"Definem-se o estado de emagrecimento ou wasting (P/E inadequado: menor que 90%) e o retardo de crescimento ou stunting (E/I inadequado: menor que 95%)."
+},
+{
+  q:"Em que idade os reflexos primitivos de procura/voracidade e preensão palmar costumam desaparecer?",
+  opts:["A partir de 1 mês","A partir de 4 meses","A partir de 9 meses","A partir de 12 meses"],
+  correct:1,
+  exp:"Em relação aos reflexos primitivos: os reflexos da procura ou voracidade e de preensão palmar a partir dos 4 meses desaparecem, e os movimentos vão se tornando voluntários."
+},
+{
+  q:"Até que idade a persistência do reflexo de Moro é considerada fisiológica?",
+  opts:["3 meses","6 meses","9 meses","12 meses"],
+  correct:1,
+  exp:"O reflexo de Moro começa a desaparecer e persiste até no máximo os 6 meses de vida; sua persistência além dessa idade já representa possível lesão cerebral grave."
+},
+{
+  q:"Quais dois tipos de neuróglia produzem bainhas de mielina, e em que porções do sistema nervoso atuam?",
+  opts:["Astrócitos (SNC) e micróglia (SNP)","Células de Schwann (SNP) e oligodendrócitos (SNC)","Neurônios motores e sensitivos","Apenas oligodendrócitos, em todo o SN"],
+  correct:1,
+  exp:"Dois tipos de neuróglia produzem bainhas de mielina: células de Schwann (no SNP) e oligodendrócitos (no SNC)."
+},
+{
+  q:"Por que os axônios do SNC exibem pouco crescimento após uma lesão, diferente dos do SNP?",
+  opts:["Porque não têm mielina","Devido à ausência de neurolema e à influência inibitória dos oligodendrócitos","Porque o SNC não tem sinapses","Porque não recebem suprimento sanguíneo"],
+  correct:1,
+  exp:"Acredita-se que isso se deva, em parte, à ausência de um neurolema e, em parte, a uma influência inibitória exercida pelos oligodendrócitos na regeneração do axônio."
+},
+{
+  q:"Que fração do tamanho do encéfalo adulto tem o encéfalo do bebê?",
+  opts:["Um décimo","Um quarto","Metade","Três quartos"],
+  correct:1,
+  exp:"Este cenário de 'use ou perca' é bem representado pelo fato de o encéfalo do bebê ter apenas um quarto do tamanho do encéfalo adulto."
+},
+{
+  q:"Existem evidências de que a estimulação extra na infância (expor bebês à arte, música, línguas) melhore o desenvolvimento intelectual além do normal?",
+  opts:["Sim, fortemente comprovado","Não existem evidências disso, segundo a fonte","Apenas em bebês prematuros","Apenas após os 2 anos de idade"],
+  correct:1,
+  exp:"Não existem evidências de que a estimulação extra na infância melhore o desenvolvimento intelectual, apesar do movimento popular de expor bebês à arte, à música e a línguas estrangeiras antes mesmo de eles aprenderem a andar."
+},
+{
+  q:"Qual a variação média de altura entre gêmeos homozigóticos na população adulta saudável, segundo a fonte?",
+  opts:["1,6 cm","6 cm","16 cm","20 cm"],
+  correct:0,
+  exp:"A variação de altura da população adulta, saudável, do sexo masculino é cerca de 20 cm, entre irmãos é de 16 cm, e entre gêmeos homozigóticos é de apenas 1,6 cm."
+},
+{
+  q:"Com que erro aproximado a altura adulta pode ser estimada a partir da altura da criança aos 2-3 anos?",
+  opts:["1 cm","8 cm","20 cm","30 cm"],
+  correct:1,
+  exp:"A implicação prática dessa relação é que a altura na idade adulta pode ser estimada preditivamente a partir da altura dos 2 aos 3 anos com um erro aproximado de até 8 cm."
+},
+{
+  q:"No estudo com 300 pares de gêmeos homozigotos criados em condições socioeconômicas diferentes, qual foi a variação média de altura observada na idade adulta?",
+  opts:["1 cm","3 cm","6 cm","10 cm"],
+  correct:2,
+  exp:"Observou-se uma variação média de 6 cm de altura quando adultos, sendo que os indivíduos criados em ambientes carentes foram sempre mais baixos que seus irmãos."
+},
+{
+  q:"Segundo Halpern et al. (2001), qual o benefício do aleitamento até os 6 meses sobre o desenvolvimento infantil?",
+  opts:["Nenhuma diferença observada","Quase 3 vezes menos chance de atraso no desenvolvimento ao final do 1º ano","Redução de 10% no risco de atraso","Efeito apenas em meninas"],
+  correct:1,
+  exp:"Halpern et al. (2001) mostraram que as crianças amamentadas até os 6 meses de vida apresentaram quase três vezes menos possibilidade de atraso em seu desenvolvimento ao final do primeiro ano de vida."
+},
+{
+  q:"No Rochester Longitudinal Study, qual foi o risco de QI verbal abaixo de 85 em crianças de alto risco socioambiental comparadas às de baixo risco?",
+  opts:["2 vezes mais chance","5 vezes mais chance","24 vezes mais chance","100 vezes mais chance"],
+  correct:2,
+  exp:"As crianças consideradas de alto risco tinham 24 vezes mais chances de apresentar QI verbal abaixo de 85 (retardo mental leve), quando comparadas às de menor risco."
+},
+{
+  q:"Até que idade a OMS, o Ministério da Saúde e a SBP recomendam o aleitamento materno exclusivo?",
+  opts:["3 meses","6 meses","12 meses","18 meses"],
+  correct:1,
+  exp:"A Organização Mundial da Saúde, o Ministério da Saúde e a Sociedade Brasileira de Pediatria recomendam aleitamento materno exclusivo até os 6 meses de idade."
+},
+{
+  q:"Qual o risco de óbito por diarreia em crianças não amamentadas com leite materno, comparado às em aleitamento exclusivo?",
+  opts:["2 vezes maior","5 vezes maior","14,2 vezes maior","50 vezes maior"],
+  correct:2,
+  exp:"Crianças que não são amamentadas com leite materno apresentam maior risco de óbito por diarreia (risco 14,2 vezes maior)."
+},
+{
+  q:"Em que dia pós-parto, aproximadamente, o leite maduro passa a ser secretado?",
+  opts:["1º dia","5º dia","10º dia","30º dia"],
+  correct:2,
+  exp:"O leite maduro só é secretado por volta do 10º dia pós-parto; nos primeiros dias, a secreção é chamada de colostro."
+},
+{
+  q:"O que caracteriza clinicamente o marasmo?",
+  opts:["Edema, hepatomegalia e face de lua","Baixa atividade, fácies senil, membros delgados e comportamento apático","Febre alta e convulsões","Obesidade e sonolência excessiva"],
+  correct:1,
+  exp:"O marasmo acomete lactentes jovens, com baixa atividade, membros delgados, desaparecimento da bola de Bichat (fácies senil), costelas visíveis e comportamento apático."
+},
+{
+  q:"O que significa a palavra 'kwashiorkor' na língua de Gana?",
+  opts:["Fraqueza do recém-nascido","Doença do primogênito, quando nasce o segundo filho","Falta de leite materno","Criança desnutrida crônica"],
+  correct:1,
+  exp:"A palavra kwashiorkor, na língua de Ghana, significa 'doença do primogênito, quando nasce o segundo filho'."
+},
+{
+  q:"Segundo a fonte, há vantagem em introduzir alimentos complementares antes dos 6 meses de idade?",
+  opts:["Sim, sempre recomendado","Não há vantagens, podendo haver prejuízo à saúde","Sim, mas apenas para meninos","Depende exclusivamente do peso ao nascer"],
+  correct:1,
+  exp:"Existem evidências de que não há vantagens em oferecer alimentos complementares a crianças menores de 6 meses, podendo, inclusive, haver prejuízos à saúde da criança."
+},
+{
+  q:"Cite um sinal de alerta no desenvolvimento motor considerado precoce.",
+  opts:["Sorrir socialmente aos 2 meses","Não sentar sem apoio aos 8-9 meses","Andar aos 12 meses","Engatinhar aos 8 meses"],
+  correct:1,
+  exp:"Entre os sinais precoces de atraso no desenvolvimento motor estão não conseguir sentar sem apoio por volta dos oito ou nove meses."
+},
+{
+  q:"Quais os três grupos de fatores associados a possíveis causas de atraso no desenvolvimento, segundo a fonte?",
+  opts:["Genéticos, hormonais e nutricionais","Biológicos, sensoriais e ambientais","Motores, cognitivos e sociais","Pré-natais, perinatais e pós-natais"],
+  correct:1,
+  exp:"Entre os fatores biológicos estão alterações genéticas e complicações perinatais; os sensoriais incluem deficiência auditiva/visual; e os ambientais incluem condições socioeconômicas e privação de estímulos."
+},
+];
+
+</script>
+<script>
+let current = 0;
+let score = 0;
+let answered = false;
+
+const qtext = document.getElementById('qtext');
+const optsContainer = document.getElementById('optsContainer');
+const feedback = document.getElementById('feedback');
+const nextBtn = document.getElementById('nextBtn');
+const qCounter = document.getElementById('qCounter');
+const scoreLive = document.getElementById('scoreLive');
+const progressFill = document.getElementById('progressFill');
+const quizArea = document.getElementById('quizArea');
+const resultArea = document.getElementById('resultArea');
+
+function renderQuestion(){
+  answered = false;
+  const item = QUIZ[current];
+  qtext.textContent = `${current+1}. ${item.q}`;
+  optsContainer.innerHTML = '';
+  item.opts.forEach((opt, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.textContent = opt;
+    btn.addEventListener('click', ()=>selectAnswer(idx));
+    optsContainer.appendChild(btn);
+  });
+  feedback.className = 'feedback';
+  feedback.textContent = '';
+  nextBtn.classList.remove('show');
+  qCounter.textContent = `Questão ${current+1} / ${QUIZ.length}`;
+  scoreLive.textContent = `Acertos: ${score}`;
+  progressFill.style.width = `${(current/QUIZ.length)*100}%`;
+}
+
+function selectAnswer(idx){
+  if(answered) return;
+  answered = true;
+  const item = QUIZ[current];
+  const opts = optsContainer.querySelectorAll('.opt');
+  opts.forEach((b,i)=>{
+    b.classList.add('disabled');
+    if(i === item.correct) b.classList.add('correct');
+    else if(i === idx) b.classList.add('incorrect');
+  });
+  if(idx === item.correct){
+    score++;
+    feedback.className = 'feedback show ok';
+    feedback.textContent = `✅ Correto! ${item.exp}`;
+  } else {
+    feedback.className = 'feedback show no';
+    feedback.textContent = `❌ Incorreto. ${item.exp}`;
+  }
+  scoreLive.textContent = `Acertos: ${score}`;
+  nextBtn.classList.add('show');
+}
+
+nextBtn.addEventListener('click', ()=>{
+  current++;
+  if(current < QUIZ.length){
+    renderQuestion();
+  } else {
+    showResult();
+  }
+});
+
+function showResult(){
+  quizArea.style.display = 'none';
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/QUIZ.length)*100);
+  document.getElementById('scoreCircle').textContent = `${score}/${QUIZ.length}`;
+  let msg = '';
+  if(pct >= 85) msg = `${pct}% de acertos — excelente domínio do conteúdo da SP! 🎉`;
+  else if(pct >= 60) msg = `${pct}% de acertos — bom resultado, revise os pontos que errou.`;
+  else msg = `${pct}% de acertos — vale a pena revisar o resumo e os flashcards desta SP.`;
+  document.getElementById('finalMsg').textContent = msg;
+}
+
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  current = 0; score = 0;
+  quizArea.style.display = 'block';
+  resultArea.style.display = 'none';
+  renderQuestion();
+});
+
+renderQuestion();
+</script>
+</body>
+</html>

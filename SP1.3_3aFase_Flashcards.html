@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 1.3 – Flashcards</title>
+<style>
+  :root{ --primary:#7a1f3d; --primary-light:#f0dbe3; --bg:#faf7f8; }
+  *{box-sizing:border-box;}
+  body{ font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); margin:0; padding:20px; color:#222; }
+  .wrap{ max-width:760px; margin:0 auto; }
+  h1{ color:var(--primary); font-size:22px; margin-bottom:2px; }
+  .subtitle{ color:#777; font-size:13px; margin-bottom:18px; }
+  .controls{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center; justify-content:space-between; }
+  select{ padding:8px 10px; border-radius:8px; border:1px solid #ddd; font-size:13px; background:#fff; }
+  .progress{ font-size:13px; color:#555; font-weight:600; }
+  .progress-bar{ height:6px; background:#eee; border-radius:4px; overflow:hidden; margin-bottom:18px; }
+  .progress-fill{ height:100%; background:var(--primary); transition:width .25s; }
+  .card-container{ perspective:1400px; height:320px; margin-bottom:20px; }
+  .card{ position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card.flipped{ transform:rotateY(180deg); }
+  .face{ position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:16px; padding:26px; display:flex; flex-direction:column; box-shadow:0 6px 18px rgba(0,0,0,.1); }
+  .front{ background:linear-gradient(135deg,#fff,var(--primary-light)); border:2px solid var(--primary); }
+  .back{ background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .cat-tag{ align-self:flex-start; font-size:11px; padding:4px 10px; border-radius:12px; background:var(--primary); color:#fff; margin-bottom:14px; }
+  .back .cat-tag{ background:rgba(255,255,255,.25); }
+  .face .content{ flex:1; display:flex; align-items:center; justify-content:center; text-align:center; font-size:17px; line-height:1.45; overflow-y:auto; }
+  .hint{ text-align:center; font-size:11px; color:#999; margin-top:-8px; margin-bottom:16px; }
+  .back .hint{ color:rgba(255,255,255,.6); }
+  .nav-buttons{ display:flex; gap:10px; justify-content:center; }
+  button.nav{ background:#fff; border:2px solid var(--primary); color:var(--primary); font-size:15px; font-weight:600; padding:10px 22px; border-radius:10px; cursor:pointer; transition:.15s; }
+  button.nav:hover{ background:var(--primary); color:#fff; }
+  button.nav:disabled{ opacity:.35; cursor:default; }
+  button.nav:disabled:hover{ background:#fff; color:var(--primary); }
+  .shuffle-btn{ background:var(--primary); color:#fff; border:none; padding:9px 16px; border-radius:8px; font-size:13px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🃏 SP 1.3 – "Que seu remédio seja seu alimento..."</h1>
+  <div class="subtitle">Flashcards de revisão — 3ª Fase | Clique no cartão para virar</div>
+
+  <div class="controls">
+    <select id="catFilter"></select>
+    <button class="shuffle-btn" id="shuffleBtn">🔀 Embaralhar</button>
+    <div class="progress" id="progressText">1 / 1</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="card-container">
+    <div class="card" id="card">
+      <div class="face front">
+        <span class="cat-tag" id="catTagFront"></span>
+        <div class="content" id="frontText"></div>
+      </div>
+      <div class="face back">
+        <span class="cat-tag" id="catTagBack">RESPOSTA</span>
+        <div class="content" id="backText"></div>
+      </div>
+    </div>
+  </div>
+  <div class="hint">clique no cartão para ver a resposta</div>
+
+  <div class="nav-buttons">
+    <button class="nav" id="prevBtn">◀ Anterior</button>
+    <button class="nav" id="nextBtn">Próximo ▶</button>
+  </div>
+</div>
+
+<script>
+const CARDS = [
+// ---- QA1: Crescimento vs Desenvolvimento ----
+{cat:"Crescimento e Desenvolvimento", f:"Como é definido o crescimento, de modo geral?", b:"Aumento do tamanho corporal, cessando com o término do aumento em altura (crescimento linear)."},
+{cat:"Crescimento e Desenvolvimento", f:"Por que o crescimento é considerado um dos melhores indicadores de saúde da criança?", b:"Por sua estreita dependência de fatores ambientais como alimentação, doenças, higiene, habitação, saneamento e acesso à saúde."},
+{cat:"Crescimento e Desenvolvimento", f:"Quais são os quatro princípios básicos do desenvolvimento?", b:"Sequência, ritmo, diferenciação e peculiaridade."},
+{cat:"Crescimento e Desenvolvimento", f:"Em crianças menores de 5 anos, o que influencia mais o potencial de crescimento: genética ou ambiente?", b:"O ambiente; os fatores genéticos ganham importância na criança maior, adolescente e jovem."},
+{cat:"Crescimento e Desenvolvimento", f:"Qual a estabilização da velocidade de crescimento após o 3º ano de vida?", b:"Entre 4 e 6 cm/ano."},
+{cat:"Crescimento e Desenvolvimento", f:"A partir de que idade pode iniciar o primeiro sinal puberal no menino (crescimento testicular)?", b:"A partir dos 9 anos (testículo atinge 4 cm³ no orquidômetro de Prader)."},
+{cat:"Crescimento e Desenvolvimento", f:"A partir de que idade surge o primeiro sinal puberal na menina (broto mamário)?", b:"A partir dos 8 anos."},
+{cat:"Crescimento e Desenvolvimento", f:"Quanto tempo após o início da puberdade ocorre a menarca?", b:"Cerca de 2 a 2,5 anos."},
+{cat:"Crescimento e Desenvolvimento", f:"Em que idade óssea ocorre a altura final nas meninas e nos meninos?", b:"Meninas: 16 anos. Meninos: 18 anos."},
+{cat:"Crescimento e Desenvolvimento", f:"Qual a velocidade de crescimento do estirão puberal em meninas e meninos?", b:"8 a 10 cm/ano nas meninas; 10 a 12 cm/ano nos meninos."},
+
+// ---- QA2: Marcos do crescimento e antropometria ----
+{cat:"Antropometria", f:"Quanto peso o RN pode perder na primeira semana de vida?", b:"Até 10% do peso ao nascer."},
+{cat:"Antropometria", f:"Em que idade o peso de nascimento geralmente duplica?", b:"Por volta do 4º mês."},
+{cat:"Antropometria", f:"Por volta do 1º aniversário, como evoluem peso, comprimento e circunferência cefálica desde o nascimento?", b:"Peso triplicado, comprimento aumentado em 50%, circunferência cefálica aumentada em 10 cm."},
+{cat:"Antropometria", f:"Em que idade o peso de nascimento quadruplica?", b:"Por volta dos 2 anos e meio."},
+{cat:"Antropometria", f:"Quanto a cabeça cresce entre os 3 e os 18 anos de idade?", b:"Apenas 5 cm."},
+{cat:"Antropometria", f:"O que significa uma criança estar no percentil 30 de peso?", b:"30% das crianças de mesmo sexo e idade têm peso abaixo, e 70% têm peso acima."},
+{cat:"Antropometria", f:"O que representa um escore Z positivo e um escore Z negativo?", b:"Positivo: criança acima da média da população. Negativo: criança abaixo da média."},
+{cat:"Antropometria", f:"Segundo a classificação de Gómez (1956), como se define eutrofia pelo índice P/I?", b:"P/I maior que 90%."},
+{cat:"Antropometria", f:"Segundo Gómez, como se define DEP III?", b:"P/I menor ou igual a 60% (ou quadro clínico de Kwashiorkor, independente do P/I)."},
+{cat:"Antropometria", f:"O que a classificação de Waterlow (1973) avalia e para qual faixa etária é usada?", b:"Avalia wasting (P/E) e stunting (E/I); usada para crianças maiores de 2 anos."},
+{cat:"Antropometria", f:"Como se define wasting (emagrecimento) segundo Waterlow?", b:"P/E inadequado, menor que 90%."},
+{cat:"Antropometria", f:"Como se define stunting (retardo de crescimento) segundo Waterlow?", b:"E/I inadequado, menor que 95%."},
+{cat:"Antropometria", f:"A partir de que ano as curvas de crescimento da OMS foram construídas e recomendadas no Brasil?", b:"Estudo iniciado em 1998; recomendadas pelo Ministério da Saúde a partir de 2007."},
+{cat:"Antropometria", f:"Qual a fórmula de predição da estatura-alvo familiar?", b:"EA = {E-mãe + (E-pai ± 13)} ÷ 2, somando 13 cm à altura da mãe para meninos ou subtraindo 13 cm da altura do pai para meninas, e adicionando ±5 cm ao resultado."},
+
+// ---- QA3: Desenvolvimento neuropsicomotor ----
+{cat:"Desenvolvimento Neuropsicomotor", f:"O que indica a persistência de atraso do desenvolvimento por mais de 2 consultas?", b:"Necessidade de avaliação mais aprofundada e encaminhamento para serviço de maior complexidade ou estimulação precoce."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"Até que idade os prematuros devem ter o desenvolvimento acompanhado pela idade gestacional corrigida?", b:"Até os 2 anos."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"Quando surge o sorriso social no lactente?", b:"Entre o 1º e o 2º mês de vida."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"Em que idade o lactente costuma sentar sem apoio?", b:"Entre 6 e 7 meses."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"Por volta de que idade surge a ansiedade de separação?", b:"Por volta dos 9 meses."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"O que é o 'período holográfico' na aquisição da linguagem?", b:"Quando, por volta dos 12 meses, a criança fala palavras singulares que parecem representar o significado de toda uma sentença."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"Quantas palavras a criança costuma usar ao se aproximar dos 2 anos?", b:"Entre 50 e 200 palavras, formando frases com 1 substantivo e 1 verbo."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"Qual o vocabulário aproximado de uma criança entre 4 e 5 anos?", b:"Entre 1.500 e 2.000 palavras."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"O que caracteriza a 'fase dos porquês'?", b:"Entre 5-6 anos, quando a criança realiza muitos questionamentos durante conversas, especialmente nas refeições."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"Até que idade os reflexos de procura/voracidade e preensão palmar desaparecem?", b:"A partir dos 4 meses."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"Até quando o reflexo de Moro é considerado fisiológico?", b:"Até no máximo os 6 meses de vida; sua persistência além dessa idade sugere possível lesão cerebral grave."},
+{cat:"Desenvolvimento Neuropsicomotor", f:"Que outro nome recebe o reflexo tônico-cervical?", b:"Reflexo do esgrimista ou reação de Magnus-Kleijn."},
+
+// ---- QA4: Mielinização, sinapses, plasticidade ----
+{cat:"Neurodesenvolvimento", f:"Quais dois tipos de neuróglia produzem bainhas de mielina, e onde atuam?", b:"Células de Schwann (SNP) e oligodendrócitos (SNC)."},
+{cat:"Neurodesenvolvimento", f:"Quanto de axônio uma célula de Schwann envolve?", b:"Cerca de 1 mm de comprimento de um único axônio."},
+{cat:"Neurodesenvolvimento", f:"O que é o neurolema e onde é encontrado?", b:"A camada citoplasmática nucleada externa da célula de Schwann; encontrado apenas em torno dos axônios no SNP, auxiliando na regeneração de axônios lesionados."},
+{cat:"Neurodesenvolvimento", f:"Por que os axônios do SNC exibem pouco crescimento após lesão?", b:"Devido à ausência de neurolema e à influência inibitória exercida pelos oligodendrócitos na regeneração do axônio."},
+{cat:"Neurodesenvolvimento", f:"O que são os nódulos de Ranvier?", b:"As lacunas na bainha de mielina que aparecem em intervalos ao longo do axônio."},
+{cat:"Neurodesenvolvimento", f:"Defina plasticidade neuronal.", b:"Capacidade do sistema nervoso de mudar com base na experiência, incluindo surgimento de novos dendritos, síntese de novas proteínas e alterações em contatos sinápticos."},
+{cat:"Neurodesenvolvimento", f:"Diferencie sinapse elétrica de sinapse química.", b:"Elétrica: junção gap, transmissão direta de íons, bidirecional, mais rápida, menor controle. Química: tipo predominante, com neurotransmissores liberados na fenda sináptica."},
+{cat:"Neurodesenvolvimento", f:"Qual íon desencadeia a liberação de neurotransmissores na sinapse química?", b:"O cálcio (Ca²⁺), que entra na célula após a despolarização da membrana pré-sináptica."},
+{cat:"Neurodesenvolvimento", f:"Que fração do tamanho do encéfalo adulto tem o encéfalo do bebê?", b:"Apenas um quarto (1/4)."},
+{cat:"Neurodesenvolvimento", f:"O desenvolvimento adicional do encéfalo após o nascimento resulta de quê?", b:"Da maior quantidade e tamanho de axônios, dendritos e sinapses — não do aumento no número de células."},
+{cat:"Neurodesenvolvimento", f:"O que pode causar 'failure to thrive' relacionado a estímulos sensoriais?", b:"Bebês negligenciados ou privados de informações sensoriais podem sofrer retardo no desenvolvimento por falta de estímulos no sistema nervoso."},
+{cat:"Neurodesenvolvimento", f:"Existe evidência de que estimulação extra na infância melhore o desenvolvimento intelectual além do normal?", b:"Não, segundo a fonte, não existem evidências disso."},
+
+// ---- QA5: Fatores ambientais e afetivos ----
+{cat:"Fatores Ambientais e Afetivos", f:"Qual a variação de altura na população adulta masculina saudável, entre irmãos, e entre gêmeos homozigóticos?", b:"População geral: ~20 cm. Entre irmãos: 16 cm. Entre gêmeos homozigóticos: 1,6 cm."},
+{cat:"Fatores Ambientais e Afetivos", f:"Qual o coeficiente de correlação entre altura dos pais e do filho ao nascer, e por quê?", b:"0,2 — baixo, porque o crescimento do RN reflete mais as condições intrauterinas do que o genótipo fetal."},
+{cat:"Fatores Ambientais e Afetivos", f:"Com que erro aproximado a altura adulta pode ser estimada a partir da altura da criança aos 2-3 anos?", b:"Erro aproximado de até 8 cm (correlação de 0,8 nessa idade)."},
+{cat:"Fatores Ambientais e Afetivos", f:"Que proporção do corpo representa a cabeça no feto aos 2 meses, no RN e no adulto?", b:"50% no feto aos 2 meses, 25% no RN, 10% no adulto."},
+{cat:"Fatores Ambientais e Afetivos", f:"Qual a diferença média na idade da menarca entre gêmeas homozigóticas e heterozigóticas?", b:"Homozigóticas: 2 meses de diferença. Heterozigóticas: 12 meses de diferença."},
+{cat:"Fatores Ambientais e Afetivos", f:"O que o estudo de Habicht (1974) demonstrou sobre crianças menores de 5 anos?", b:"Que crescem em ritmo semelhante entre diversas nacionalidades quando submetidas a boas condições de vida, mas em ritmo diferente conforme o nível socioeconômico dentro de uma mesma nacionalidade."},
+{cat:"Fatores Ambientais e Afetivos", f:"Qual a variação média de altura observada em 300 pares de gêmeos homozigotos criados em condições socioeconômicas diferentes?", b:"6 cm, sendo os criados em ambientes carentes sempre mais baixos que seus irmãos."},
+{cat:"Fatores Ambientais e Afetivos", f:"O que pode acontecer com o vínculo mãe-bebê quando a criança nasce com alterações orgânicas?", b:"A mãe pode se debater com o luto do filho imaginado, podendo sentir o recém-nascido como um estranho, o que pode alterar profundamente a função materna."},
+
+// ---- QA6: Condições socioeconômicas e culturais ----
+{cat:"Fatores Socioeconômicos", f:"Quais os três grupos de fatores de proteção da criança contra falhas no desenvolvimento?", b:"Atributos individuais, laços afetivos/competência social na família, e suporte externo (comunidade/instituições)."},
+{cat:"Fatores Socioeconômicos", f:"Segundo Halpern et al. (2001), qual o benefício do aleitamento até os 6 meses sobre o desenvolvimento?", b:"Crianças amamentadas até os 6 meses tiveram quase 3 vezes menos possibilidade de atraso no desenvolvimento ao final do 1º ano de vida."},
+{cat:"Fatores Socioeconômicos", f:"No National Collaborative Perinatal Project, quais fatores mais predisseram o desempenho intelectual aos 4 anos?", b:"Os níveis socioeconômico e de educação maternos, mesmo entre 158 variáveis biomédicas avaliadas."},
+{cat:"Fatores Socioeconômicos", f:"Segundo Lipman et al. (1994), qual o risco de baixo desempenho escolar em crianças de baixa renda?", b:"3 vezes mais chance de apresentar baixo desempenho escolar e dificuldades sociais."},
+{cat:"Fatores Socioeconômicos", f:"No Rochester Longitudinal Study, qual o risco de QI verbal abaixo de 85 em crianças de alto risco socioambiental?", b:"24 vezes mais chances, comparadas às de menor risco."},
+{cat:"Fatores Socioeconômicos", f:"Que proporção das crianças com déficit cognitivo moderado cresceram na pobreza, segundo Parker et al. (1988)?", b:"Aproximadamente 2/3."},
+
+// ---- QA7: Aleitamento materno e desnutrição ----
+{cat:"Aleitamento e Desnutrição", f:"Até quando a OMS, o MS e a SBP recomendam o aleitamento materno exclusivo?", b:"Até os 6 meses de idade, com manutenção até os 2 anos ou mais associado à alimentação complementar."},
+{cat:"Aleitamento e Desnutrição", f:"Como a OMS define aleitamento materno exclusivo?", b:"Criança recebe somente leite humano da mãe ou ordenhado, sem outros líquidos ou sólidos, exceto gotas/xaropes de vitaminas, minerais ou medicamentos."},
+{cat:"Aleitamento e Desnutrição", f:"Qual o risco de óbito por diarreia em crianças não amamentadas com leite materno?", b:"14,2 vezes maior, comparado a crianças em aleitamento materno exclusivo."},
+{cat:"Aleitamento e Desnutrição", f:"Segundo a OMS, quantas crianças a amamentação resguarda por ano no mundo?", b:"6 milhões de crianças."},
+{cat:"Aleitamento e Desnutrição", f:"Em que dia pós-parto o leite maduro passa a ser secretado?", b:"Por volta do 10º dia pós-parto."},
+{cat:"Aleitamento e Desnutrição", f:"Qual a principal imunoglobulina do leite materno e sua função?", b:"IgA secretória, que atua contra microrganismos que colonizam ou invadem superfícies mucosas."},
+{cat:"Aleitamento e Desnutrição", f:"Qual a frequência habitual de mamadas em aleitamento materno exclusivo sob livre demanda?", b:"8 a 12 vezes por dia."},
+{cat:"Aleitamento e Desnutrição", f:"Cite sinais de técnica inadequada de amamentação.", b:"Bochechas encovadas a cada sucção, ruídos da língua, mama esticada/deformada, mamilos com estrias vermelhas, dor à amamentação."},
+{cat:"Aleitamento e Desnutrição", f:"O que caracteriza clinicamente o marasmo?", b:"Baixa atividade, criança pequena para a idade, membros delgados, desaparecimento da bola de Bichat (fácies senil), costelas visíveis, cabelos finos, comportamento apático."},
+{cat:"Aleitamento e Desnutrição", f:"O que significa a palavra 'kwashiorkor' e o que caracteriza essa desnutrição?", b:"Significa 'doença do primogênito, quando nasce o segundo filho' (língua de Gana); caracteriza-se por alterações de pele/cabelo, hepatomegalia, ascite, face de lua e/ou anasarca, geralmente em crianças maiores de 2 anos."},
+{cat:"Aleitamento e Desnutrição", f:"Quais os riscos de introduzir alimentos complementares antes dos 6 meses?", b:"Maior chance de infecção intestinal e hospitalização por doença respiratória, diminuição da duração do AM, interferência na absorção de ferro e zinco."},
+
+// ---- QA8: Sinais precoces de atraso no desenvolvimento ----
+{cat:"Sinais de Alerta no Desenvolvimento", f:"Cite sinais precoces de alerta no desenvolvimento motor no 1º ano de vida.", b:"Dificuldade em sustentar a cabeça após 3-4 meses, não sentar sem apoio aos 8-9 meses, não engatinhar/tentar locomoção ao final do 1º ano."},
+{cat:"Sinais de Alerta no Desenvolvimento", f:"Até que idade a marcha independente deve ter se iniciado, considerando sinal de alerta se ausente?", b:"Aproximadamente até os 18 meses."},
+{cat:"Sinais de Alerta no Desenvolvimento", f:"Cite sinais de alerta na linguagem e comunicação.", b:"Ausência de balbucio aos 6 meses, falta de palavras simples aos 12-15 meses, vocabulário muito limitado após os 2 anos, perda de habilidades já adquiridas."},
+{cat:"Sinais de Alerta no Desenvolvimento", f:"Cite sinais de alerta no desenvolvimento social e emocional associados ao Transtorno do Espectro Autista.", b:"Ausência/redução do contato visual, pouca resposta ao ser chamado pelo nome, dificuldade em compartilhar atenção, ausência de gestos comunicativos, padrões repetitivos de comportamento."},
+{cat:"Sinais de Alerta no Desenvolvimento", f:"Quais os três grupos de fatores associados a atrasos no desenvolvimento?", b:"Fatores biológicos, fatores sensoriais e fatores ambientais."},
+{cat:"Sinais de Alerta no Desenvolvimento", f:"Por que a identificação precoce dos sinais de alerta é fundamental?", b:"Porque o diagnóstico e a intervenção precoces minimizam os impactos das alterações no desenvolvimento e favorecem o desenvolvimento global da criança."},
+];
+
+</script>
+<script>
+let deck = [...CARDS];
+let currentIndex = 0;
+let flipped = false;
+
+const cardEl = document.getElementById('card');
+const frontText = document.getElementById('frontText');
+const backText = document.getElementById('backText');
+const catTagFront = document.getElementById('catTagFront');
+const progressText = document.getElementById('progressText');
+const progressFill = document.getElementById('progressFill');
+const catFilter = document.getElementById('catFilter');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const shuffleBtn = document.getElementById('shuffleBtn');
+
+function populateFilter(){
+  const cats = ['Todas', ...new Set(CARDS.map(c=>c.cat))];
+  catFilter.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+function applyFilter(){
+  const val = catFilter.value;
+  deck = val === 'Todas' ? [...CARDS] : CARDS.filter(c=>c.cat===val);
+  currentIndex = 0;
+  render();
+}
+
+function render(){
+  if(deck.length === 0){
+    frontText.textContent = "Nenhum cartão nesta categoria.";
+    backText.textContent = "";
+    progressText.textContent = "0 / 0";
+    progressFill.style.width = "0%";
+    return;
+  }
+  const c = deck[currentIndex];
+  frontText.textContent = c.f;
+  backText.textContent = c.b;
+  catTagFront.textContent = c.cat;
+  cardEl.classList.remove('flipped');
+  flipped = false;
+  progressText.textContent = `${currentIndex+1} / ${deck.length}`;
+  progressFill.style.width = `${((currentIndex+1)/deck.length)*100}%`;
+  prevBtn.disabled = currentIndex === 0;
+  nextBtn.disabled = currentIndex === deck.length - 1;
+}
+
+cardEl.addEventListener('click', ()=>{
+  flipped = !flipped;
+  cardEl.classList.toggle('flipped', flipped);
+});
+
+prevBtn.addEventListener('click', ()=>{ if(currentIndex>0){ currentIndex--; render(); } });
+nextBtn.addEventListener('click', ()=>{ if(currentIndex<deck.length-1){ currentIndex++; render(); } });
+catFilter.addEventListener('change', applyFilter);
+shuffleBtn.addEventListener('click', ()=>{
+  for(let i=deck.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]]=[deck[j],deck[i]];
+  }
+  currentIndex = 0;
+  render();
+});
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='ArrowRight') nextBtn.click();
+  if(e.key==='ArrowLeft') prevBtn.click();
+  if(e.key===' '){ e.preventDefault(); cardEl.click(); }
+});
+
+populateFilter();
+render();
+</script>
+</body>
+</html>
