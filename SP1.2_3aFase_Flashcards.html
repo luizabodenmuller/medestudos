@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 1.2 – Flashcards</title>
+<style>
+  :root{ --primary:#7a1f3d; --primary-light:#f0dbe3; --bg:#faf7f8; }
+  *{box-sizing:border-box;}
+  body{ font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); margin:0; padding:20px; color:#222; }
+  .wrap{ max-width:760px; margin:0 auto; }
+  h1{ color:var(--primary); font-size:22px; margin-bottom:2px; }
+  .subtitle{ color:#777; font-size:13px; margin-bottom:18px; }
+  .controls{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center; justify-content:space-between; }
+  select{ padding:8px 10px; border-radius:8px; border:1px solid #ddd; font-size:13px; background:#fff; }
+  .progress{ font-size:13px; color:#555; font-weight:600; }
+  .progress-bar{ height:6px; background:#eee; border-radius:4px; overflow:hidden; margin-bottom:18px; }
+  .progress-fill{ height:100%; background:var(--primary); transition:width .25s; }
+  .card-container{ perspective:1400px; height:320px; margin-bottom:20px; }
+  .card{ position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card.flipped{ transform:rotateY(180deg); }
+  .face{ position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:16px; padding:26px; display:flex; flex-direction:column; box-shadow:0 6px 18px rgba(0,0,0,.1); }
+  .front{ background:linear-gradient(135deg,#fff,var(--primary-light)); border:2px solid var(--primary); }
+  .back{ background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .cat-tag{ align-self:flex-start; font-size:11px; padding:4px 10px; border-radius:12px; background:var(--primary); color:#fff; margin-bottom:14px; }
+  .back .cat-tag{ background:rgba(255,255,255,.25); }
+  .face .content{ flex:1; display:flex; align-items:center; justify-content:center; text-align:center; font-size:17px; line-height:1.45; overflow-y:auto; }
+  .hint{ text-align:center; font-size:11px; color:#999; margin-top:-8px; margin-bottom:16px; }
+  .back .hint{ color:rgba(255,255,255,.6); }
+  .nav-buttons{ display:flex; gap:10px; justify-content:center; }
+  button.nav{ background:#fff; border:2px solid var(--primary); color:var(--primary); font-size:15px; font-weight:600; padding:10px 22px; border-radius:10px; cursor:pointer; transition:.15s; }
+  button.nav:hover{ background:var(--primary); color:#fff; }
+  button.nav:disabled{ opacity:.35; cursor:default; }
+  button.nav:disabled:hover{ background:#fff; color:var(--primary); }
+  .shuffle-btn{ background:var(--primary); color:#fff; border:none; padding:9px 16px; border-radius:8px; font-size:13px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🃏 SP 1.2 – Nasceu, e agora?</h1>
+  <div class="subtitle">Flashcards de revisão — 3ª Fase | Clique no cartão para virar</div>
+
+  <div class="controls">
+    <select id="catFilter"></select>
+    <button class="shuffle-btn" id="shuffleBtn">🔀 Embaralhar</button>
+    <div class="progress" id="progressText">1 / 1</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="card-container">
+    <div class="card" id="card">
+      <div class="face front">
+        <span class="cat-tag" id="catTagFront"></span>
+        <div class="content" id="frontText"></div>
+      </div>
+      <div class="face back">
+        <span class="cat-tag" id="catTagBack">RESPOSTA</span>
+        <div class="content" id="backText"></div>
+      </div>
+    </div>
+  </div>
+  <div class="hint">clique no cartão para ver a resposta</div>
+
+  <div class="nav-buttons">
+    <button class="nav" id="prevBtn">◀ Anterior</button>
+    <button class="nav" id="nextBtn">Próximo ▶</button>
+  </div>
+</div>
+
+<script>
+const CARDS = [
+// ---- QA1: Classificação RN ----
+{cat:"Classificação RN", f:"Como se define um RN AIG (adequado para a idade gestacional)?", b:"Peso entre 2,5kg e 4kg, ou percentil entre 10 e 90 para a idade gestacional."},
+{cat:"Classificação RN", f:"Como se define um RN PIG (pequeno para a idade gestacional)?", b:"Percentil abaixo de 10 (ou 2 desvios-padrão abaixo da média, aproximadamente 3º percentil)."},
+{cat:"Classificação RN", f:"Como se define um RN GIG (grande para a idade gestacional)?", b:"Peso acima de 4kg, ou percentil 90 ou mais."},
+{cat:"Classificação RN", f:"Qual a diferença conceitual entre PIG e RCIU?", b:"PIG descreve o peso/comprimento abaixo do 10º percentil para a IG. RCIU descreve a velocidade de crescimento diminuída no feto, documentada por pelo menos 2 avaliações do crescimento intrauterino."},
+{cat:"Classificação RN", f:"Qual a definição de RN pré-termo por idade gestacional?", b:"Menos de 37 semanas completas (259 dias)."},
+{cat:"Classificação RN", f:"Qual a definição de RN pré-termo tardio?", b:"IG entre 34 e 36 semanas (238 a 258 dias)."},
+{cat:"Classificação RN", f:"Qual a definição de RN a termo?", b:"De 37 a 41 6/7 semanas (260 a 294 dias)."},
+{cat:"Classificação RN", f:"Qual a definição de RN pós-termo?", b:"42 semanas (295 dias) ou mais."},
+{cat:"Classificação RN", f:"Qual a faixa de peso normal ao nascimento (PNN)?", b:"2.500 a 4.000 g."},
+{cat:"Classificação RN", f:"O que caracteriza muito baixo peso (MBPN) e extremo baixo peso (EBPN) ao nascimento?", b:"MBPN: menos de 1.500g. EBPN: menos de 1.000g."},
+{cat:"Classificação RN", f:"Qual percentual dos lactentes com baixo peso ao nascer também são PIG/RCIU?", b:"Cerca de um terço."},
+{cat:"Classificação RN", f:"Em que percentual dos fetos com PIG/RCIU se encontra hipoxemia fetal crônica?", b:"Cerca de 30%."},
+{cat:"Classificação RN", f:"O que caracteriza a 'RCIU poupadora de cabeça'?", b:"Restrição que afeta a última porção da gestação: circunferência cefálica relativamente normal, comprimento discretamente reduzido, peso mais afetado, por redistribuição do fluxo sanguíneo para órgãos vitais."},
+{cat:"Classificação RN", f:"O que caracteriza a RCIU simétrica?", b:"Circunferência cefálica, comprimento e peso proporcionalmente pequenos, com início precoce na gestação; índice ponderal pode ser normal; maior associação com defeitos cromossômicos e infecções congênitas precoces."},
+{cat:"Classificação RN", f:"Como é definido o RN GIG na maioria dos relatórios?", b:"2 desvios-padrão acima da média para a IG, ou acima do 90º percentil."},
+{cat:"Classificação RN", f:"Cite causas de RN GIG.", b:"Lactentes constitucionalmente grandes, filhos de diabéticas (classes A, B, C), alguns RN pós-termo, síndrome de Beckwith-Wiedemann."},
+
+// ---- QA2: Apgar ----
+{cat:"Apgar", f:"Quais são as cinco características avaliadas no índice de Apgar?", b:"Frequência cardíaca, esforço respiratório, tônus muscular, irritabilidade reflexa e coloração — cada uma pontuada de 0 a 2."},
+{cat:"Apgar", f:"Em quais momentos o escore de Apgar deve ser determinado em todos os RN?", b:"Com 1 e 5 minutos após o nascimento."},
+{cat:"Apgar", f:"Se o Apgar for menor que 7 aos 5 minutos, o que deve ser feito?", b:"O escore deve ser recalculado a cada 5 minutos até atingir 7 ou mais, ou até completar 20 minutos de vida."},
+{cat:"Apgar", f:"Qual o risco de morte neonatal em RN a termo com Apgar entre 7 e 10?", b:"Cerca de 1 a cada 5.000 nascimentos."},
+{cat:"Apgar", f:"Qual a taxa de mortalidade em RN a termo com Apgar de 5 minutos ≤3?", b:"25%."},
+{cat:"Apgar", f:"O escore de Apgar determina a necessidade de ressuscitação?", b:"Não — a avaliação da necessidade de VPP deve já ter sido feita no momento do escore de 1 minuto."},
+{cat:"Apgar", f:"Como se caracteriza a apneia primária clinicamente?", b:"RN não estabelece respiração espontânea imediata, mas responde rapidamente à estimulação tátil (piparotes nas plantas, esfregaduras no dorso)."},
+{cat:"Apgar", f:"Qual a conduta se o RN estiver apneico apesar de estimulação tátil ou FC <100 bpm apesar de esforço respiratório?", b:"Considerar apneia secundária e iniciar ventilação por ambu-máscara (Apgar 3-4)."},
+
+// ---- QA3: Adaptação Respiratória e Cardiovascular ----
+{cat:"Adaptação Neonatal", f:"Qual a prevalência da respiração periódica em RN a termo?", b:"Até 80%, podendo se aproximar de 100% em pré-termo extremos."},
+{cat:"Adaptação Neonatal", f:"O que caracteriza a apneia patológica (diferente da respiração periódica)?", b:"Cessação da ventilação com duração superior a 15-20 segundos, especialmente se associada a bradicardia e/ou dessaturação."},
+{cat:"Adaptação Neonatal", f:"Diferencie apneia central de apneia obstrutiva.", b:"Central: ausência de esforço respiratório. Obstrutiva: ausência de controle neuromuscular das vias aéreas superiores, com persistência do esforço respiratório."},
+{cat:"Adaptação Neonatal", f:"Que fração dos alvéolos do adulto o RN possui ao nascimento?", b:"Apenas um sexto; os demais se formam nos primeiros 10 anos de vida pós-natal."},
+{cat:"Adaptação Neonatal", f:"Qual condição resulta da insuficiência de surfactante e qual sua taxa de mortalidade associada?", b:"Síndrome da Angústia Respiratória do RN (SARRN); responsável por aproximadamente 20% das mortes de recém-nascidos."},
+{cat:"Adaptação Neonatal", f:"Quais são os três mecanismos de eliminação do líquido pulmonar ao nascimento?", b:"1) Reabsorção via canais de sódio estimulados por adrenalina fetal; 2) forças mecânicas do parto (compressão torácica); 3) eliminação pós-natal via circulação/vasos linfáticos após as primeiras respirações."},
+{cat:"Adaptação Neonatal", f:"Qual a saturação de oxigênio do sangue na veia umbilical fetal (proveniente da placenta)?", b:"Cerca de 80%."},
+{cat:"Adaptação Neonatal", f:"Qual a saturação de oxigênio nas artérias umbilicais fetais?", b:"Aproximadamente 58%."},
+{cat:"Adaptação Neonatal", f:"O que medeia o fechamento do ducto arterioso ao nascimento?", b:"A bradicinina, substância liberada pelos pulmões durante a insuflação inicial."},
+{cat:"Adaptação Neonatal", f:"Em quanto tempo ocorre o fechamento funcional do ducto arterioso após o nascimento?", b:"Geralmente entre 10 e 15 horas."},
+{cat:"Adaptação Neonatal", f:"Em que percentual dos indivíduos o fechamento anatômico do forame oval nunca ocorre?", b:"20% (persistência do forame oval)."},
+
+// ---- QA4: Perda de peso ----
+{cat:"Perda de Peso", f:"Qual a perda ponderal fisiológica esperada em RN a termo e em pré-termo?", b:"5 a 10% em RN a termo; pode chegar a 15% em pré-termo."},
+{cat:"Perda de Peso", f:"Quando geralmente ocorre o nadir da perda ponderal do RN?", b:"Entre o 4º e o 6º dia de vida."},
+{cat:"Perda de Peso", f:"Em quanto tempo o RN a termo geralmente recupera o peso ao nascer?", b:"Ao final de 10 dias de vida."},
+{cat:"Perda de Peso", f:"Que perda de peso após o 10º dia de vida deve ser considerada problema grave?", b:"Perda maior que 10% do peso de nascimento."},
+{cat:"Perda de Peso", f:"Qual a necessidade calórica de manutenção para RN pré-termo em ambiente termoneutro?", b:"40 a 60 kcal/kg/dia."},
+{cat:"Perda de Peso", f:"Qual a recomendação calórica da AAP para crescimento de RN pré-termo?", b:"105 a 130 kcal/kg/dia."},
+{cat:"Perda de Peso", f:"Qual a necessidade calórica média de RN com enfermidade grave/prolongada?", b:"130 a 150 kcal/kg/dia."},
+{cat:"Perda de Peso", f:"Que percentual das perdas insensíveis de água em RN prematuro ocorre pela pele?", b:"2/3 (dois terços)."},
+{cat:"Perda de Peso", f:"Que percentual das perdas insensíveis em RN a termo é causado pelo sistema respiratório?", b:"Aproximadamente 30%."},
+
+// ---- QA5: Termorregulação ----
+{cat:"Termorregulação", f:"Qual a principal fonte de termogênese do RN, já que ele não produz tremor eficaz?", b:"A gordura marrom, altamente vascularizada e inervada por neurônios simpáticos."},
+{cat:"Termorregulação", f:"Entre que semanas de gestação começa a ser produzida a gordura marrom?", b:"Entre 25 e 30 semanas de gestação."},
+{cat:"Termorregulação", f:"Quais são os quatro mecanismos de perda de calor no RN?", b:"Radiação, convecção, evaporação e condução."},
+{cat:"Termorregulação", f:"Qual mecanismo de perda de calor é o principal em RN molhados na sala de parto?", b:"Evaporação."},
+{cat:"Termorregulação", f:"Sem intervenção, quanto a temperatura do RN pode cair por minuto na sala de parto?", b:"Cerca de 0,3°C por minuto."},
+{cat:"Termorregulação", f:"Como a OMS classifica a faixa normal de temperatura do RN?", b:"36,5 a 37,5°C."},
+{cat:"Termorregulação", f:"Quais são as faixas de hipotermia leve, moderada e grave?", b:"Leve: 36,0-36,4°C. Moderada: 32,0-35,9°C. Grave: menor que 32°C."},
+{cat:"Termorregulação", f:"Qual a temperatura ambiente mínima recomendada pela OMS para o RN?", b:"25°C."},
+{cat:"Termorregulação", f:"Em que percentual dos RN prematuros de muito baixo peso ocorre hipotermia logo após o nascimento?", b:"Cerca de 50%."},
+{cat:"Termorregulação", f:"Qual intervenção reduz o risco de hipotermia em prematuros extremos (<28 semanas)?", b:"Envolver o RN em saco plástico de polietileno até o pescoço, sem secar, imediatamente após o parto."},
+{cat:"Termorregulação", f:"Qual a definição de hipertermia no RN?", b:"Temperatura corporal acima de 37,5°C."},
+
+// ---- QA6: Icterícia ----
+{cat:"Icterícia Neonatal", f:"Quanto de bilirrubina é produzido pelo catabolismo de 1g de hemoglobina?", b:"35 mg de bilirrubina."},
+{cat:"Icterícia Neonatal", f:"Em que período do RN geralmente surge a icterícia fisiológica e em que proporção dos neonatos?", b:"Entre o 2º e o 5º dias de vida, em cerca de um terço dos neonatos."},
+{cat:"Icterícia Neonatal", f:"Qual o nível máximo de bilirrubina sérica atingido pela maioria dos RN a termo com icterícia fisiológica?", b:"Até 10 mg/dL."},
+{cat:"Icterícia Neonatal", f:"Em que percentual dos RN a termo a icterícia fisiológica causa amarelamento clinicamente evidente?", b:"Cerca de 15%."},
+{cat:"Icterícia Neonatal", f:"O que caracteriza a icterícia do leite materno?", b:"Níveis persistentemente altos de bilirrubina indireta em lactentes saudáveis que se desenvolvem bem, geralmente regredindo na 2ª semana de vida."},
+{cat:"Icterícia Neonatal", f:"O que é a encefalopatia bilirrubínica aguda?", b:"Forma de neurotoxicidade encontrada nos primeiros dias de vida, com hipotonia, dificuldade de alimentação, letargia e respostas anormais ao potencial evocado auditivo."},
+{cat:"Icterícia Neonatal", f:"O que é o kernicterus?", b:"Forma crônica de neurotoxicidade pelo depósito de bilirrubina nos gânglios da base e hipocampo, causando espasticidade, incoordenação muscular e deficiência intelectual."},
+{cat:"Icterícia Neonatal", f:"Acima de qual nível de bilirrubina não conjugada há correlação direta com kernicterus?", b:"18 a 20 mg/dL (podendo ocorrer com níveis mais baixos em muito prematuros)."},
+{cat:"Icterícia Neonatal", f:"Quais são as três abordagens de tratamento da hiperbilirrubinemia?", b:"Exsanguinotransfusão, fototerapia e agentes farmacológicos."},
+{cat:"Icterícia Neonatal", f:"Qual o espectro de luz utilizado na fototerapia?", b:"460 a 490 nm."},
+{cat:"Icterícia Neonatal", f:"Qual o mecanismo de ação da fototerapia?", b:"Converte a bilirrubina em produtos que podem ser excretados na bile ou urina sem necessidade de conjugação hepática."},
+
+// ---- QA7: Triagem Neonatal ----
+{cat:"Triagem Neonatal", f:"Qual o objetivo da Triagem Neonatal Biológica (Teste do Pezinho)?", b:"Identificar distúrbios e doenças em RN e lactentes em tempo oportuno para intervenção adequada, reduzindo morbimortalidade."},
+{cat:"Triagem Neonatal", f:"Quais são as seis condições detectadas pela triagem biológica citadas na fonte?", b:"Fenilcetonúria, hipotireoidismo congênito, doença falciforme e outras hemoglobinopatias, fibrose cística, hiperplasia adrenal congênita e deficiência de biotinidase."},
+{cat:"Triagem Neonatal", f:"Em que período idealmente deve ser coletada a amostra do teste do pezinho?", b:"Entre o 3º e o 5º dia de vida."},
+{cat:"Triagem Neonatal", f:"Quais são as demais triagens neonatais universais do SUS, além da biológica?", b:"Triagem auditiva (Orelhinha), ocular (Olhinho), de cardiopatias congênitas críticas (Coraçãozinho) e avaliação do frênulo lingual (Linguinha)."},
+{cat:"Triagem Neonatal", f:"Qual a divisão de responsabilidades entre maternidade e Atenção Básica na triagem neonatal?", b:"A maternidade realiza as triagens auditiva, ocular e de cardiopatias antes da alta; a Atenção Básica coleta a triagem biológica no tempo adequado e faz busca ativa de casos alterados."},
+
+// ---- QA8: Vitamina K e colírios ----
+{cat:"Vitamina K e Profilaxia Ocular", f:"Quais são os dois microrganismos mais comuns causadores de oftalmia neonatal?", b:"Gonococo (Neisseria gonorrhoeae) e clamídia (Chlamydia trachomatis)."},
+{cat:"Vitamina K e Profilaxia Ocular", f:"Quem implementou a profilaxia da oftalmia neonatal com nitrato de prata e qual foi seu impacto?", b:"Credé, em Leipzig (1881); reduziu a incidência de oftalmia neonatal no hospital de 10% para 0,3%."},
+{cat:"Vitamina K e Profilaxia Ocular", f:"Quais agentes profiláticos oculares são citados na fonte?", b:"Nitrato de prata 1%, pomada de eritromicina 0,5%, pomada de tetraciclina 1% e solução de povidona-iodo 2,5%."},
+{cat:"Vitamina K e Profilaxia Ocular", f:"Em quanto tempo após o nascimento deve ser feita a profilaxia ocular?", b:"Dentro de 1 hora após o nascimento."},
+{cat:"Vitamina K e Profilaxia Ocular", f:"Qual o tratamento da conjuntivite gonocócica neonatal confirmada?", b:"Ceftriaxona 100 mg/kg, dose única, IM ou IV."},
+{cat:"Vitamina K e Profilaxia Ocular", f:"Qual a dose e via de administração da vitamina K no RN?", b:"0,5 a 1 mg, intramuscular, dose única, dentro de 1 hora do nascimento."},
+{cat:"Vitamina K e Profilaxia Ocular", f:"Desde quando a profilaxia com vitamina K é padrão-ouro?", b:"Desde 1961, quando foi recomendada pela primeira vez pela American Academy of Pediatrics."},
+{cat:"Vitamina K e Profilaxia Ocular", f:"Qual é a função bioquímica da vitamina K na coagulação?", b:"É cofator para a carboxilação de resíduos de glutamato em γ-carboxiglutamato (Gla), necessária para que proteínas de coagulação (protrombina, fatores VII, IX, X) se liguem ao cálcio."},
+{cat:"Vitamina K e Profilaxia Ocular", f:"Quando a deficiência de vitamina K se torna rara no RN e quando persiste risco?", b:"Torna-se raríssima após o estabelecimento da flora intestinal (2 dias pós-natais); RN em uso de antibióticos de amplo espectro devem receber suplementos pelo menos 2x/semana."},
+];
+
+</script>
+<script>
+let deck = [...CARDS];
+let currentIndex = 0;
+let flipped = false;
+
+const cardEl = document.getElementById('card');
+const frontText = document.getElementById('frontText');
+const backText = document.getElementById('backText');
+const catTagFront = document.getElementById('catTagFront');
+const progressText = document.getElementById('progressText');
+const progressFill = document.getElementById('progressFill');
+const catFilter = document.getElementById('catFilter');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const shuffleBtn = document.getElementById('shuffleBtn');
+
+function populateFilter(){
+  const cats = ['Todas', ...new Set(CARDS.map(c=>c.cat))];
+  catFilter.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+function applyFilter(){
+  const val = catFilter.value;
+  deck = val === 'Todas' ? [...CARDS] : CARDS.filter(c=>c.cat===val);
+  currentIndex = 0;
+  render();
+}
+
+function render(){
+  if(deck.length === 0){
+    frontText.textContent = "Nenhum cartão nesta categoria.";
+    backText.textContent = "";
+    progressText.textContent = "0 / 0";
+    progressFill.style.width = "0%";
+    return;
+  }
+  const c = deck[currentIndex];
+  frontText.textContent = c.f;
+  backText.textContent = c.b;
+  catTagFront.textContent = c.cat;
+  cardEl.classList.remove('flipped');
+  flipped = false;
+  progressText.textContent = `${currentIndex+1} / ${deck.length}`;
+  progressFill.style.width = `${((currentIndex+1)/deck.length)*100}%`;
+  prevBtn.disabled = currentIndex === 0;
+  nextBtn.disabled = currentIndex === deck.length - 1;
+}
+
+cardEl.addEventListener('click', ()=>{
+  flipped = !flipped;
+  cardEl.classList.toggle('flipped', flipped);
+});
+
+prevBtn.addEventListener('click', ()=>{ if(currentIndex>0){ currentIndex--; render(); } });
+nextBtn.addEventListener('click', ()=>{ if(currentIndex<deck.length-1){ currentIndex++; render(); } });
+catFilter.addEventListener('change', applyFilter);
+shuffleBtn.addEventListener('click', ()=>{
+  for(let i=deck.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]]=[deck[j],deck[i]];
+  }
+  currentIndex = 0;
+  render();
+});
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='ArrowRight') nextBtn.click();
+  if(e.key==='ArrowLeft') prevBtn.click();
+  if(e.key===' '){ e.preventDefault(); cardEl.click(); }
+});
+
+populateFilter();
+render();
+</script>
+</body>
+</html>

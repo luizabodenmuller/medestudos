@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 1.2 – Quiz</title>
+<style>
+  :root{ --primary:#7a1f3d; --primary-light:#f0dbe3; --bg:#faf7f8; --green:#2e7d32; --red:#c62828; }
+  *{box-sizing:border-box;}
+  body{ font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); margin:0; padding:20px; color:#222; }
+  .wrap{ max-width:720px; margin:0 auto; }
+  h1{ color:var(--primary); font-size:22px; margin-bottom:2px; }
+  .subtitle{ color:#777; font-size:13px; margin-bottom:18px; }
+  .progress{ font-size:13px; color:#555; font-weight:600; margin-bottom:6px; display:flex; justify-content:space-between; }
+  .progress-bar{ height:8px; background:#eee; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill{ height:100%; background:var(--primary); transition:width .3s; }
+  .qcard{ background:#fff; border-radius:16px; padding:24px; box-shadow:0 6px 18px rgba(0,0,0,.08); border:2px solid var(--primary-light); }
+  .qtext{ font-size:17px; font-weight:600; margin-bottom:18px; line-height:1.4; }
+  .opt{ display:block; width:100%; text-align:left; padding:12px 16px; margin-bottom:10px; border-radius:10px; border:2px solid #e2c8d3; background:#fff; font-size:14.5px; cursor:pointer; transition:.15s; }
+  .opt:hover:not(.disabled){ background:var(--primary-light); }
+  .opt.correct{ background:#e8f5e9; border-color:var(--green); color:var(--green); font-weight:600; }
+  .opt.incorrect{ background:#fdecea; border-color:var(--red); color:var(--red); font-weight:600; }
+  .opt.disabled{ cursor:default; }
+  .feedback{ margin-top:14px; padding:12px 16px; border-radius:10px; font-size:13.8px; line-height:1.45; display:none; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background:#e8f5e9; color:#1b5e20; }
+  .feedback.no{ background:#fdecea; color:#8e1a1a; }
+  .nextBtn{ margin-top:16px; background:var(--primary); color:#fff; border:none; padding:11px 22px; border-radius:10px; font-size:14.5px; font-weight:600; cursor:pointer; display:none; }
+  .nextBtn.show{ display:inline-block; }
+  .result{ text-align:center; padding:30px 20px; }
+  .result h2{ color:var(--primary); font-size:26px; }
+  .score-circle{ width:140px; height:140px; border-radius:50%; border:8px solid var(--primary); display:flex; align-items:center; justify-content:center; margin:20px auto; font-size:30px; font-weight:700; color:var(--primary); }
+  .restartBtn{ margin-top:10px; background:var(--primary); color:#fff; border:none; padding:12px 26px; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; }
+  .msg{ font-size:15px; color:#555; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📝 SP 1.2 – Nasceu, e agora?</h1>
+  <div class="subtitle">Quiz de revisão — 3ª Fase</div>
+
+  <div id="quizArea">
+    <div class="progress">
+      <span id="qCounter">Questão 1 / 24</span>
+      <span id="scoreLive">Acertos: 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="qcard">
+      <div class="qtext" id="qtext"></div>
+      <div id="optsContainer"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nextBtn" id="nextBtn">Próxima questão ▶</button>
+    </div>
+  </div>
+
+  <div id="resultArea" style="display:none;">
+    <div class="qcard result">
+      <h2>Quiz concluído!</h2>
+      <div class="score-circle" id="scoreCircle"></div>
+      <div class="msg" id="finalMsg"></div>
+      <button class="restartBtn" id="restartBtn">🔄 Refazer quiz</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const QUIZ = [
+{
+  q:"Como é definido um RN PIG (pequeno para a idade gestacional)?",
+  opts:["Peso acima do percentil 90","Peso ou comprimento abaixo do percentil 10 para a IG","Peso entre 2,5 e 4 kg","IG maior que 42 semanas"],
+  correct:1,
+  exp:"PIG descreve o RN cujo peso ao nascer ou comprimento cabeça-calcanhar está abaixo do 10º percentil para a IG (ou 2 DP abaixo da média, ~3º percentil)."
+},
+{
+  q:"Qual a diferença conceitual entre PIG e RCIU segundo a fonte?",
+  opts:["São sinônimos exatos","PIG é definido por percentil de peso/comprimento; RCIU descreve a velocidade de crescimento diminuída, documentada por pelo menos 2 avaliações","RCIU só ocorre em prematuros","PIG é sempre mais grave que RCIU"],
+  correct:1,
+  exp:"Embora usados como sinônimos, são populações sutilmente diferentes: PIG é definido por percentil no nascimento, enquanto RCIU documenta a velocidade de crescimento fetal diminuída ao longo de pelo menos duas avaliações."
+},
+{
+  q:"Qual a faixa de idade gestacional que caracteriza o pré-termo tardio?",
+  opts:["28 a 31 semanas","32 a 33 semanas","34 a 36 semanas","37 a 38 semanas"],
+  correct:2,
+  exp:"O pré-termo tardio é um subgrupo com IG entre 34 e 36 semanas (238 a 258 dias)."
+},
+{
+  q:"Que percentual dos lactentes com baixo peso ao nascer também são PIG/RCIU?",
+  opts:["10%","um quarto","um terço","dois terços"],
+  correct:2,
+  exp:"Cerca de um terço dos lactentes com baixo peso ao nascer (BPN) são também PIG/RCIU."
+},
+{
+  q:"Quais são os cinco componentes avaliados no índice de Apgar?",
+  opts:["Peso, comprimento, perímetro cefálico, temperatura e glicemia","Frequência cardíaca, esforço respiratório, tônus muscular, irritabilidade reflexa e coloração","Apgar, Ballard, Dubowitz, Silverman e Downes","Reflexos, sucção, choro, postura e temperatura"],
+  correct:1,
+  exp:"As cinco características avaliadas, cada uma pontuada de 0 a 2, são frequência cardíaca, esforço respiratório, tônus muscular, irritabilidade reflexa e coloração."
+},
+{
+  q:"Em RN a termo com Apgar de 5 minutos ≤3, qual a taxa de mortalidade citada na fonte?",
+  opts:["5%","10%","25%","50%"],
+  correct:2,
+  exp:"Esse risco é comparado com uma taxa de mortalidade de 25% para recém-nascidos a termo com Apgar de 5 minutos ≤3."
+},
+{
+  q:"O escore de Apgar de 1 minuto determina a necessidade de reanimação?",
+  opts:["Sim, é o único critério usado","Não — a avaliação da necessidade de VPP já deve ter sido feita nesse momento","Sim, mas apenas em prematuros","Não, apenas o escore de 5 minutos importa"],
+  correct:1,
+  exp:"Embora os escores sejam baseados nos mesmos elementos, a avaliação da necessidade de intervenção com VPP deve idealmente já ter sido feita no momento em que o escore de 1 minuto é determinado."
+},
+{
+  q:"Qual a prevalência da respiração periódica em RN a termo, segundo a fonte?",
+  opts:["Até 20%","Até 50%","Até 80%","100%"],
+  correct:2,
+  exp:"A prevalência da respiração periódica é tão elevada quanto 80% em RNs a termo, podendo se aproximar de 100% em pré-termo extremos."
+},
+{
+  q:"A síndrome da angústia respiratória do recém-nascido (SARRN) é responsável por que percentual das mortes neonatais?",
+  opts:["Cerca de 5%","Cerca de 10%","Cerca de 20%","Cerca de 40%"],
+  correct:2,
+  exp:"A SARRN, anteriormente conhecida como doença da membrana hialina, é responsável por aproximadamente 20% das mortes de recém-nascidos."
+},
+{
+  q:"Qual a saturação de oxigênio aproximada do sangue na veia umbilical fetal (vindo da placenta)?",
+  opts:["30%","58%","80%","95%"],
+  correct:2,
+  exp:"O sangue proveniente da placenta retorna ao feto pela veia umbilical com cerca de 80% de saturação de oxigênio."
+},
+{
+  q:"Em quanto tempo, em média, ocorre o fechamento funcional do ducto arterioso após o nascimento?",
+  opts:["1 a 2 horas","10 a 15 horas","3 a 5 dias","1 mês"],
+  correct:1,
+  exp:"Em geral, o fechamento funcional do ducto arterioso se completa de 10 a 15 horas após o nascimento."
+},
+{
+  q:"Qual a perda ponderal fisiológica esperada em RN a termo nos primeiros dias de vida?",
+  opts:["1 a 3%","5 a 10%","15 a 20%","20 a 25%"],
+  correct:1,
+  exp:"A perda típica de 5 a 10% do peso ao nascimento a termo pode chegar a 15% em pré-termo."
+},
+{
+  q:"Quando geralmente ocorre o nadir (ponto mais baixo) da perda ponderal do RN?",
+  opts:["Nas primeiras 24 horas","Aos 4 a 6 dias de vida","Aos 10 dias de vida","Aos 21 dias de vida"],
+  correct:1,
+  exp:"O nadir da perda ponderal geralmente ocorre aos 4 a 6 dias de vida."
+},
+{
+  q:"Qual a principal fonte de termogênese do recém-nascido, já que ele não produz tremor eficaz?",
+  opts:["Tecido muscular esquelético","Gordura marrom","Fígado","Tecido adiposo branco"],
+  correct:1,
+  exp:"Os neonatos a termo têm uma fonte de termogênese na gordura marrom, altamente vascularizada e inervada por neurônios simpáticos."
+},
+{
+  q:"Segundo a classificação da OMS, qual a faixa de temperatura considerada hipotermia grave?",
+  opts:["36,0 a 36,4°C","32,0 a 35,9°C","Menor que 32°C","Acima de 37,5°C"],
+  correct:2,
+  exp:"A hipotermia é classificada em leve (36,0-36,4°C), moderada (32,0-35,9°C) e grave (menor que 32°C)."
+},
+{
+  q:"Qual a temperatura ambiente mínima recomendada pela OMS para o recém-nascido?",
+  opts:["18°C","20°C","25°C","30°C"],
+  correct:2,
+  exp:"A Organização Mundial de Saúde recomenda que todos os RN sejam mantidos em temperatura ambiental de no mínimo 25°C."
+},
+{
+  q:"Em cerca de que percentual dos RN a termo a icterícia fisiológica causa amarelamento clinicamente evidente?",
+  opts:["5%","15%","30%","50%"],
+  correct:1,
+  exp:"Em cerca de 15% dos recém-nascidos a termo, os níveis de bilirrubina causam amarelamento clinicamente evidente da pele, denominado icterícia fisiológica."
+},
+{
+  q:"O que caracteriza a icterícia do leite materno, segundo a fonte?",
+  opts:["Surge nas primeiras 24 horas e é sempre grave","Causa níveis persistentemente altos de bilirrubina indireta em lactentes saudáveis, regredindo geralmente na 2ª semana","É sempre indicação de exsanguinotransfusão","Ocorre apenas em prematuros extremos"],
+  correct:1,
+  exp:"A icterícia do leite materno é causa de níveis persistentemente altos de bilirrubina indireta em lactentes que se desenvolvem bem e são saudáveis, geralmente regredindo na segunda semana de vida."
+},
+{
+  q:"Qual o espectro de luz utilizado na fototerapia para tratamento da hiperbilirrubinemia?",
+  opts:["200 a 300 nm","460 a 490 nm","600 a 700 nm","700 a 900 nm"],
+  correct:1,
+  exp:"Esses 'banhos de luz' emitem um espectro de 460 a 490 nm, o que aumenta a oxidação da bilirrubina e sua depuração renal."
+},
+{
+  q:"Segundo a fonte, entre que dias de vida deve ser coletada idealmente a amostra do Teste do Pezinho?",
+  opts:["1º e 2º dia","3º e 5º dia","10º e 14º dia","30º dia"],
+  correct:1,
+  exp:"A coleta das amostras deve ser realizada idealmente entre o 3º e o 5º dia de vida."
+},
+{
+  q:"Quais das seguintes condições NÃO está entre as detectadas pela Triagem Neonatal Biológica citada na fonte?",
+  opts:["Fenilcetonúria","Fibrose cística","Hiperplasia adrenal congênita","Síndrome de Down"],
+  correct:3,
+  exp:"As condições citadas são fenilcetonúria, hipotireoidismo congênito, doença falciforme e outras hemoglobinopatias, fibrose cística, hiperplasia adrenal congênita e deficiência de biotinidase — a síndrome de Down não é detectada por essa triagem biológica."
+},
+{
+  q:"Quem implementou a profilaxia da oftalmia neonatal com nitrato de prata, e qual foi o resultado?",
+  opts:["Apgar, reduzindo mortalidade neonatal","Credé, reduzindo a incidência de 10% para 0,3% em seu hospital","Baumes, eliminando a icterícia neonatal","Kaplan, reduzindo o kernicterus"],
+  correct:1,
+  exp:"A profilaxia contra a oftalmia neonatal começou em 1881 por Credé em Leipzig; com nitrato de prata a 2% instilado nos olhos, ele reduziu a incidência de oftalmia neonatal no seu hospital de 10% para 0,3%."
+},
+{
+  q:"Qual a dose recomendada de vitamina K intramuscular para o recém-nascido?",
+  opts:["0,1 a 0,2 mg","0,5 a 1 mg","5 mg","10 mg"],
+  correct:1,
+  exp:"Uma única dose intramuscular de vitamina K, 0,5 a 1 mg, é administrada dentro de 1 hora do nascimento."
+},
+{
+  q:"Desde quando a profilaxia com vitamina K é considerada padrão-ouro?",
+  opts:["Desde 1881","Desde 1953","Desde 1961","Desde 2006"],
+  correct:2,
+  exp:"A profilaxia da vitamina K tem sido o padrão-ouro desde 1961, quando foi primeiro recomendada pela American Academy of Pediatrics (AAP)."
+},
+];
+
+</script>
+<script>
+let current = 0;
+let score = 0;
+let answered = false;
+
+const qtext = document.getElementById('qtext');
+const optsContainer = document.getElementById('optsContainer');
+const feedback = document.getElementById('feedback');
+const nextBtn = document.getElementById('nextBtn');
+const qCounter = document.getElementById('qCounter');
+const scoreLive = document.getElementById('scoreLive');
+const progressFill = document.getElementById('progressFill');
+const quizArea = document.getElementById('quizArea');
+const resultArea = document.getElementById('resultArea');
+
+function renderQuestion(){
+  answered = false;
+  const item = QUIZ[current];
+  qtext.textContent = `${current+1}. ${item.q}`;
+  optsContainer.innerHTML = '';
+  item.opts.forEach((opt, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.textContent = opt;
+    btn.addEventListener('click', ()=>selectAnswer(idx));
+    optsContainer.appendChild(btn);
+  });
+  feedback.className = 'feedback';
+  feedback.textContent = '';
+  nextBtn.classList.remove('show');
+  qCounter.textContent = `Questão ${current+1} / ${QUIZ.length}`;
+  scoreLive.textContent = `Acertos: ${score}`;
+  progressFill.style.width = `${(current/QUIZ.length)*100}%`;
+}
+
+function selectAnswer(idx){
+  if(answered) return;
+  answered = true;
+  const item = QUIZ[current];
+  const opts = optsContainer.querySelectorAll('.opt');
+  opts.forEach((b,i)=>{
+    b.classList.add('disabled');
+    if(i === item.correct) b.classList.add('correct');
+    else if(i === idx) b.classList.add('incorrect');
+  });
+  if(idx === item.correct){
+    score++;
+    feedback.className = 'feedback show ok';
+    feedback.textContent = `✅ Correto! ${item.exp}`;
+  } else {
+    feedback.className = 'feedback show no';
+    feedback.textContent = `❌ Incorreto. ${item.exp}`;
+  }
+  scoreLive.textContent = `Acertos: ${score}`;
+  nextBtn.classList.add('show');
+}
+
+nextBtn.addEventListener('click', ()=>{
+  current++;
+  if(current < QUIZ.length){
+    renderQuestion();
+  } else {
+    showResult();
+  }
+});
+
+function showResult(){
+  quizArea.style.display = 'none';
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/QUIZ.length)*100);
+  document.getElementById('scoreCircle').textContent = `${score}/${QUIZ.length}`;
+  let msg = '';
+  if(pct >= 85) msg = `${pct}% de acertos — excelente domínio do conteúdo da SP! 🎉`;
+  else if(pct >= 60) msg = `${pct}% de acertos — bom resultado, revise os pontos que errou.`;
+  else msg = `${pct}% de acertos — vale a pena revisar o resumo e os flashcards desta SP.`;
+  document.getElementById('finalMsg').textContent = msg;
+}
+
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  current = 0; score = 0;
+  quizArea.style.display = 'block';
+  resultArea.style.display = 'none';
+  renderQuestion();
+});
+
+renderQuestion();
+</script>
+</body>
+</html>
