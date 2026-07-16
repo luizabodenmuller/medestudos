@@ -32,7 +32,7 @@
 <body>
 <div class="wrap">
   <h1>📚 Painel de Estudos — PBL</h1>
-  <div class="subtitle">Resumos, flashcards, Anki e quizzes de todas as SPs, organizados por fase</div>
+  <div class="subtitle">Resumos, flashcards e quizzes de todas as SPs, organizados por fase</div>
 
   <input type="text" class="search" id="searchBox" placeholder="🔎 Buscar por número da SP, título ou palavra-chave...">
 
@@ -48,7 +48,7 @@
 /* ============================================================
    COMO ADICIONAR UMA NOVA SP:
    Basta acrescentar um novo objeto ao array abaixo, dentro da
-   fase correspondente. Os campos "resumo", "flashcards", "anki"
+   fase correspondente. Os campos "resumo", "flashcards"
    e "quiz" devem ser o CAMINHO RELATIVO até o arquivo, a partir
    da pasta onde este index.html está salvo.
 
@@ -57,10 +57,13 @@
      index.html   <-- este arquivo
      SP1.1_3aFase_Resumo.pdf
      SP1.1_3aFase_Flashcards.html
-     SP1.1_3aFase_Anki.txt
      SP1.1_3aFase_Quiz.html
      SP1.2_3aFase_Resumo.pdf
      ...
+
+   OBS: o botão de Anki foi removido do painel a partir da SP1.3 —
+   os arquivos Anki continuam sendo gerados normalmente, só não
+   aparecem mais aqui.
 
    Se algum arquivo ainda não existir, apague a linha correspondente
    (ou deixe null) — o botão aparecerá desabilitado automaticamente.
@@ -76,7 +79,6 @@ const DATA = [
         keywords: "Pré-natal, fatores de risco, teratógenos, rubéola, toxoplasmose, Zika, síndrome alcoólica fetal, prematuridade, RCIU",
         resumo: "SP1.1_3aFase_Resumo.pdf",
         flashcards: "SP1.1_3aFase_Flashcards.html",
-        anki: "SP1.1_3aFase_Anki.txt",
         quiz: "SP1.1_3aFase_Quiz.html"
       },
       {
@@ -85,18 +87,24 @@ const DATA = [
         keywords: "Classificação do RN, PIG, GIG, AIG, Apgar, adaptação cardiorrespiratória, perda de peso fisiológica, termorregulação, icterícia neonatal, triagem neonatal, vitamina K",
         resumo: "SP1.2_3aFase_Resumo.pdf",
         flashcards: "SP1.2_3aFase_Flashcards.html",
-        anki: "SP1.2_3aFase_Anki.txt",
         quiz: "SP1.2_3aFase_Quiz.html"
+      },
+      {
+        num: "SP 1.3",
+        titulo: "\"Que seu remédio seja seu alimento...\" (Hipócrates)",
+        keywords: "Crescimento, desenvolvimento infantil, antropometria, marcos neuropsicomotores, mielinização, sinapses, plasticidade cerebral, fatores socioeconômicos, aleitamento materno, desnutrição, sinais de alerta",
+        resumo: "SP1.3_3aFase_Resumo.pdf",
+        flashcards: "SP1.3_3aFase_Flashcards.html",
+        quiz: "SP1.3_3aFase_Quiz.html"
       }
       // Acrescente as próximas SPs aqui, seguindo o mesmo modelo:
       // {
-      //   num: "SP 1.2",
+      //   num: "SP 1.4",
       //   titulo: "...",
       //   keywords: "...",
-      //   resumo: "SP1.2/SP1.2_3aFase_Resumo.pdf",
-      //   flashcards: "SP1.2/SP1.2_3aFase_Flashcards.html",
-      //   anki: "SP1.2/SP1.2_3aFase_Anki.txt",
-      //   quiz: "SP1.2/SP1.2_3aFase_Quiz.html"
+      //   resumo: "SP1.4_3aFase_Resumo.pdf",
+      //   flashcards: "SP1.4_3aFase_Flashcards.html",
+      //   quiz: "SP1.4_3aFase_Quiz.html"
       // },
     ]
   }
@@ -146,7 +154,6 @@ function render(filter){
         <div class="links">
           ${linkOrDisabled(sp.resumo, 'Resumo', '📄')}
           ${linkOrDisabled(sp.flashcards, 'Flashcards', '🃏')}
-          ${linkOrDisabled(sp.anki, 'Anki', '🎴')}
           ${linkOrDisabled(sp.quiz, 'Quiz', '📝')}
         </div>
       `;
