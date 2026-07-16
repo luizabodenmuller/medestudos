@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 1.4 - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:21px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 1.4 — "Entre escolhas e riscos"</h1>
+  <p>Quiz · 3ª Fase · Saúde do Adolescente</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 1.4.</footer>
+
+<script>
+const questions = [
+  {
+    q: "Qual conjunto de achados é característico da vaginose bacteriana de Maria Eduarda?",
+    options: ["pH ácido (3,8), teste das aminas negativo e muitos lactobacilos", "pH 5,2, teste das aminas (KOH) positivo, clue cells e redução de lactobacilos", "Corrimento coalhado com pseudo-hifas no KOH", "Corrimento amarelo-esverdeado com protozoário móvel"],
+    correct: 1,
+    explain: "O pH vaginal de 5,2 (normal 3,8-4,5), o teste das aminas positivo, as clue cells (células recobertas por bactérias) e a redução de lactobacilos caracterizam a vaginose bacteriana."
+  },
+  {
+    q: "A vaginose bacteriana é causada por:",
+    options: ["Crescimento excessivo de Candida albicans", "Substituição da flora de lactobacilos (produtores de H₂O₂) por bactérias anaeróbias", "Infecção pelo protozoário Trichomonas vaginalis", "Infecção por Neisseria gonorrhoeae"],
+    correct: 1,
+    explain: "A vaginose bacteriana é a substituição da flora vaginal normal de Lactobacillus, produtores de peróxido de hidrogênio, pelo crescimento excessivo de microrganismos anaeróbios (ex.: Gardnerella)."
+  },
+  {
+    q: "Quais são as ISTs mais frequentes na adolescência, segundo o material?",
+    options: ["Sífilis e HIV", "Neisseria gonorrhoeae e Chlamydia trachomatis", "Herpes e HPV", "Hepatite B e C"],
+    correct: 1,
+    explain: "\"Na adolescência, as infecções mais frequentes são com Neisseria gonorrhoeae e Chlamydia trachomatis.\" A maior incidência de ISTs ocorre na adolescência (até 25% dos jovens < 25 anos)."
+  },
+  {
+    q: "Qual é o único método que garante dupla proteção (ISTs + gravidez)?",
+    options: ["Anticoncepcional oral", "DIU", "Preservativo masculino ou feminino", "Vacina contra HPV"],
+    correct: 2,
+    explain: "\"Somente o preservativo masculino ou feminino garante a dupla proteção, ou seja, protege da transmissão das ISTs e também da gravidez.\""
+  },
+  {
+    q: "A prevenção secundária das ISTs tem por objetivo:",
+    options: ["Reduzir a incidência (novos casos) por educação sexual", "Reduzir a prevalência, identificando e tratando as infecções (incluindo parceiros)", "Tratar as complicações das ISTs", "Vacinar toda a população"],
+    correct: 1,
+    explain: "A profilaxia secundária visa reduzir os casos já existentes (redução da prevalência), identificando as infecções e promovendo tratamento imediato, que deve incluir os parceiros sexuais."
+  },
+  {
+    q: "Qual estrutura anatômica torna as adolescentes mais vulneráveis a ISTs?",
+    options: ["Hipertrofia do clitóris", "A ectopia cervical (junção escamocolunar exposta antes da involução)", "A ausência de glicogênio vaginal", "O útero bicorno"],
+    correct: 1,
+    explain: "A transformação das células vaginais forma a ectopia (junção escamocolunar exposta na ectocérvice); antes da involução, representa uma vulnerabilidade única à infecção em mulheres adolescentes."
+  },
+  {
+    q: "Sobre o HPV, qual afirmação está correta?",
+    options: ["A vacina deve ser feita só após o início da atividade sexual", "A lesão mais detectada em adolescentes é a LIEBG (baixo grau, benigna)", "Todas as infecções evoluem para câncer invasivo", "O Papanicolaou deve começar aos 11 anos"],
+    correct: 1,
+    explain: "A lesão clinicamente detectada com maior frequência em adolescentes é a LIEBG (lesão intraepitelial escamosa de baixo grau), que reflete alterações benignas de infecção viral ativa."
+  },
+  {
+    q: "Qual marcador sorológico, se persistir por mais de 6 meses, define a infecção crônica pelo HBV?",
+    options: ["Anti-HBs", "IgM anti-HBc", "HBsAg", "HBeAg"],
+    correct: 2,
+    explain: "O HBsAg é o primeiro marcador a aparecer; a persistência de HBsAg além de 6 meses define o estado de infecção crônica pela hepatite B."
+  },
+  {
+    q: "Quais vacinas de rotina Maria Eduarda deve receber, por não tê-las tomado aos 14 anos?",
+    options: ["Apenas a BCG", "HPV, meningocócica ACWY, influenza, dengue e Covid-19", "Somente a antitetânica", "Nenhuma, pois já passou da idade"],
+    correct: 1,
+    explain: "Pela descrição do caso, deve-se aplicar as vacinas de rotina: HPV, Meningocócica conjugada ACWY, influenza, dengue e Covid-19, além de confirmar Hepatite A e B, Febre Amarela, dT e Tríplice Viral."
+  },
+  {
+    q: "A acantose nigricans observada em Maria Eduarda sugere:",
+    options: ["Infecção fúngica da pele", "Resistência insulínica (hiperinsulinemia)", "Deficiência de vitamina B12", "Reação alérgica ao suor"],
+    correct: 1,
+    explain: "A acantose nigricans é o escurecimento da pele (axilas, pescoço) relacionado à hiperestimulação dos melanócitos pelo aumento da insulina, sugerindo resistência insulínica."
+  },
+  {
+    q: "Quais parâmetros podem ser usados para o diagnóstico de resistência periférica à insulina (RPI)?",
+    options: ["Insulina sérica > 15 mcUI/mL ou HOMA > 3,14", "Glicemia de jejum < 70 mg/dL", "Hemoglobina glicada < 4%", "Colesterol total > 200 mg/dL"],
+    correct: 0,
+    explain: "Para o diagnóstico de RPI, podem-se utilizar valores de insulina sérica maiores que 15 mcUI/mL ou HOMA (glicemia jejum/18 × insulina jejum/22,5) maior que 3,14."
+  },
+  {
+    q: "Por que o excesso de tecido adiposo favorece a resistência insulínica?",
+    options: ["Porque armazena vitaminas em excesso", "Porque libera citocinas inflamatórias que reduzem a sensibilidade à insulina e favorecem inflamação crônica", "Porque aumenta a produção de lactobacilos", "Porque eleva o pH sanguíneo"],
+    correct: 1,
+    explain: "O excesso de tecido adiposo libera citocinas inflamatórias que reduzem a sensibilidade à insulina e favorecem a inflamação crônica, alterando o metabolismo de glicose e lipídios."
+  },
+  {
+    q: "No modelo de Erikson, qual é o conflito central do estágio da adolescência?",
+    options: ["Confiança × Desconfiança", "Autonomia × Vergonha", "Identidade × Confusão de identidade/papéis", "Integridade × Desespero"],
+    correct: 2,
+    explain: "O estágio V (adolescência, 12-20 anos) tem como crise psicossocial Identidade × Confusão de identidade, cuja força básica é a fidelidade."
+  },
+  {
+    q: "Segundo Erikson, o que emerge da resolução POSITIVA de uma crise psicossocial?",
+    options: ["Uma patologia básica", "Uma potencialidade (força básica/virtude)", "Uma regressão ao estágio anterior", "A ausência de conflito futuro"],
+    correct: 1,
+    explain: "Da resolução positiva da crise entre as forças sintônicas e distônicas emerge uma potencialidade (força básica); da não resolução emerge uma patologia básica."
+  },
+  {
+    q: "Qual força básica nasce da resolução positiva da crise integridade × desespero (velhice)?",
+    options: ["Esperança", "Vontade", "Amor", "Sabedoria"],
+    correct: 3,
+    explain: "\"E assim por diante até a sabedoria que nasce da resolução positiva da crise entre integridade e o desespero.\""
+  },
+  {
+    q: "Qual é a duração mínima do humor deprimido para o diagnóstico de transtorno depressivo persistente (distimia) em adolescentes?",
+    options: ["2 semanas", "6 meses", "1 ano", "2 anos"],
+    correct: 2,
+    explain: "A distimia pode ser diagnosticada quando a perturbação do humor continua por pelo menos 2 anos em adultos e 1 ano em crianças e adolescentes."
+  },
+  {
+    q: "Na adolescência, a depressão pode ser MASCARADA por qual conjunto de sintomas?",
+    options: ["Euforia e grandiosidade", "Agitação psicomotora, ataques de raiva, comportamentos delinquentes, uso de drogas e obesidade", "Aumento do rendimento escolar", "Hipersonia isolada"],
+    correct: 1,
+    explain: "Na adolescência, a depressão pode ser mascarada por agitação psicomotora, ataques de raiva, comportamentos delinquentes, hostilidade, autoagressão, exposição a risco, uso de drogas, dor crônica, obesidade e letargia."
+  },
+  {
+    q: "Qual eixo hormonal encontra-se hiperativo em cerca de metade dos pacientes com depressão?",
+    options: ["Eixo hipotálamo-hipófise-tireoide", "Eixo hipotálamo-hipófise-gonadal", "Eixo hipotálamo-hipófise-suprarrenal (↑ACTH → ↑cortisol)", "Eixo renina-angiotensina-aldosterona"],
+    correct: 2,
+    explain: "A depressão associa-se à hipersecreção de ACTH pela hipófise, com aumento do cortisol; o eixo hipotálamo-hipófise-suprarrenal encontra-se hiperativo em cerca de metade desses pacientes."
+  },
+  {
+    q: "Na APS, o atendimento ao adolescente deve pautar-se por quais princípios?",
+    options: ["Verticalização e episodicidade", "Integralidade e longitudinalidade, com vínculo entre equipe e família", "Atendimento exclusivamente médico e pontual", "Notificação obrigatória de toda consulta aos pais"],
+    correct: 1,
+    explain: "Na APS, o atendimento deve integrar cuidado clínico e promoção da saúde, atendendo princípios como integralidade e longitudinalidade, com construção de vínculo entre a equipe e a família."
+  },
+  {
+    q: "Quando a quebra de sigilo do adolescente é justificada, segundo o ECA?",
+    options: ["Sempre que os pais solicitarem", "Somente em situações de risco iminente à vida ou à integridade do adolescente ou de terceiros", "Em qualquer atendimento de rotina", "Nunca, o sigilo é absoluto"],
+    correct: 1,
+    explain: "O sigilo é um direito fundamental; sua quebra só é justificada em situações de risco iminente à vida ou à integridade do adolescente ou de terceiros (violência, abuso, risco de suicídio, autolesão)."
+  },
+  {
+    q: "Qual artigo do ECA trata do dever de comunicar à autoridade competente casos de suspeita ou confirmação de maus-tratos?",
+    options: ["Art. 11", "Art. 17", "Art. 245", "Art. 5"],
+    correct: 2,
+    explain: "O Art. 245 do ECA estabelece o dever do médico/professor/responsável de comunicar à autoridade competente os casos de suspeita ou confirmação de maus-tratos, sob pena de multa."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>

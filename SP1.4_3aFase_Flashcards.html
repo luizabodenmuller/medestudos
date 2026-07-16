@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 1.4 - Flashcards</title>
+<style>
+  :root { --primary:#7a1f3d; --primary-light:#9c3355; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:21px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .controls { max-width:900px; margin:0 auto 18px auto; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .filter-btn { background:#fff; border:1px solid #e6c9d3; color:var(--primary); padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { background:#f7ecf0; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .progress-wrap { max-width:900px; margin:0 auto 20px auto; text-align:center; font-size:13px; color:#444; }
+  .progress-bar { width:100%; max-width:400px; margin:6px auto 0 auto; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .2s; }
+  .deck { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card-outer { perspective:1200px; height:230px; }
+  .card-outer.hidden { display:none; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card-outer.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; padding:16px; display:flex; flex-direction:column; box-shadow:0 2px 6px rgba(0,0,0,0.12); overflow:auto; }
+  .card-front { background:#fff; border-top:5px solid var(--primary); }
+  .card-back { background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-light); margin-bottom:8px; font-weight:bold; }
+  .card-back .card-cat { color:#eeccd7; }
+  .card-text { font-size:13.5px; line-height:1.4; flex:1; }
+  .card-hint { font-size:10px; color:#999; text-align:center; margin-top:6px; }
+  .card-back .card-hint { color:#d9b3c0; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 1.4 — "Entre escolhas e riscos"</h1>
+  <p>Flashcards · 3ª Fase · Saúde do Adolescente</p>
+</header>
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="controls" id="filterControls"></div>
+<div class="deck" id="deck"></div>
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 1.4.</footer>
+
+<script>
+const cards = [
+  {cat:"ISTs / Vaginose", front:"Qual a hipótese diagnóstica para o corrimento de Maria Eduarda e o que a causa?", back:"Vaginose bacteriana: falta do lactobacilo produtor de peróxido de hidrogênio, permitindo crescimento exagerado de bactérias anaeróbias (substituição da flora normal por anaeróbias)."},
+  {cat:"ISTs / Vaginose", front:"Qual a faixa normal do pH vaginal e o que indica um pH de 5,2?", back:"Normal: 3,8-4,5. Um pH de 5,2 indica aumento da flora anaeróbia, cujos produtos metabólicos provocam esfoliação do epitélio vaginal e o corrimento de cheiro desagradável."},
+  {cat:"ISTs / Vaginose", front:"Quais são os achados microscópicos e o teste característicos da vaginose bacteriana?", back:"Clue cells (células epiteliais recobertas por bactérias), redução de lactobacilos, pH >4,5 e teste das aminas (KOH) positivo (odor forte)."},
+  {cat:"ISTs / Vaginose", front:"Diferencie candidíase vulvovaginal e tricomoníase.", back:"Candidíase (C. albicans): prurido, edema, disúria, corrimento espesso e coalhado; leveduras/pseudo-hifas no KOH. Tricomoníase (T. vaginalis): corrimento difuso, fétido, amarelo-esverdeado; protozoário móvel na salina."},
+  {cat:"ISTs / Epidemiologia", front:"Quais as ISTs mais frequentes na adolescência?", back:"Neisseria gonorrhoeae e Chlamydia trachomatis. A maior incidência de ISTs ocorre na adolescência, atingindo até 25% dos jovens com menos de 25 anos."},
+  {cat:"ISTs / Epidemiologia", front:"O que é a ectopia cervical e por que aumenta a vulnerabilidade a ISTs?", back:"É a exposição da junção escamocolunar na ectocérvice (antes da involução na maturação). Representa uma vulnerabilidade única à infecção em adolescentes jovens, associada a iniciação sexual precoce."},
+  {cat:"ISTs / Prevenção", front:"Diferencie prevenção primária, secundária e terciária das ISTs.", back:"Primária: reduz a incidência (educação sexual, barreira; vacinas para HBV e HPV). Secundária: reduz a prevalência (identificação e tratamento imediato, incluindo parceiros). Terciária: tratamento das complicações."},
+  {cat:"ISTs / Prevenção", front:"Qual método garante dupla proteção?", back:"Somente o preservativo (masculino ou feminino) garante dupla proteção — protege da transmissão de ISTs e também da gravidez."},
+  {cat:"ISTs / HPV", front:"Qual a lesão cervical mais detectada em adolescentes com HPV?", back:"A LIEBG (lesão intraepitelial escamosa de baixo grau) — alterações benignas de infecção viral ativa. Menos comum é a LIEAG (alto grau), considerada pré-cancerosa."},
+  {cat:"ISTs / HPV", front:"Quando iniciar o Papanicolaou e a vacina contra HPV?", back:"Papanicolaou a partir dos 21 anos (a cada 3 anos; acima de 30, a cada 5). A vacina deve ser feita antes do início da atividade sexual, pois a taxa de aquisição de HPV é alta logo após."},
+  {cat:"ISTs / Hepatite B", front:"Qual marcador define a cronicidade da hepatite B e qual aparece primeiro?", back:"O HBsAg é o primeiro marcador a aparecer (marca infectividade); sua persistência além de 6 meses define infecção crônica. A IgM anti-HBc marca a infecção aguda; o anti-HBs marca recuperação/proteção (único presente em vacinados)."},
+  {cat:"Vacinação", front:"Quais vacinas de rotina Maria Eduarda deve receber por não ter tomado aos 14 anos?", back:"HPV, Meningocócica conjugada ACWY, influenza, dengue e Covid-19. Além de confirmar registro de Hepatite A e B, Febre Amarela, dT e Tríplice Viral."},
+  {cat:"Vacinação", front:"Qual o esquema da meningocócica ACWY no adolescente?", back:"Vacinados na infância: reforço aos 11 anos ou 5 anos após a última dose. Não vacinados: a partir dos 16 anos, uma dose. ACWY e C não são intercambiáveis."},
+  {cat:"Vacinação", front:"Qual o esquema de HPV no SUS para adolescentes?", back:"HPV4 em dose única para meninas e meninos de 9 a 14 anos. Adolescentes menores de 20 anos não vacinados: duas doses com intervalo de 6 meses. Contraindicada em gestantes."},
+  {cat:"DCNT / Metabólico", front:"O que é a acantose nigricans e o que ela sugere?", back:"Escurecimento da pele (axilas, pescoço), relacionado à hiperestimulação dos melanócitos pelo aumento da insulina. Sugere resistência insulínica (RPI)."},
+  {cat:"DCNT / Metabólico", front:"Como se define a resistência periférica à insulina (RPI) e quais parâmetros a diagnosticam?", back:"Declínio na habilidade da insulina de estimular o uso de glicose por músculos/tecido adiposo e de suprimir a produção hepática de glicose. Diagnóstico: insulina sérica >15 mcUI/mL ou HOMA >3,14."},
+  {cat:"DCNT / Metabólico", front:"Por que o excesso de tecido adiposo leva à resistência insulínica?", back:"O tecido adiposo em excesso libera citocinas inflamatórias que reduzem a sensibilidade à insulina e favorecem inflamação crônica, alterando o metabolismo de glicose e lipídios."},
+  {cat:"DCNT / Metabólico", front:"Quais doenças Maria Eduarda tem risco elevado de desenvolver?", back:"DM2, síndrome metabólica, doença cardiovascular e até SOP (síndrome dos ovários policísticos)."},
+  {cat:"DCNT / Metabólico", front:"Quais os critérios do IDF para síndrome metabólica (10-16 anos)?", back:"CA ≥ percentil 90; glicemia de jejum ≥ 100 mg/dL; triglicerídeos ≥ 150 ou HDL ≥ 40 mg/dL (ou hipolipemiantes); PA ≥ 130/85 mmHg (ou anti-hipertensivo)."},
+  {cat:"Erikson", front:"O que ocorre na resolução (positiva ou negativa) de cada crise de Erikson?", back:"A resolução positiva gera uma potencialidade (força básica/virtude); a não resolução gera uma patologia básica. A crise é uma oportunidade de desenvolvimento."},
+  {cat:"Erikson", front:"Qual a crise e a força básica do estágio da adolescência (12-20 anos)?", back:"Crise: Identidade × Confusão de identidade/papéis. Força básica: Fidelidade."},
+  {cat:"Erikson", front:"Cite a crise dos estágios I, VII e VIII de Erikson.", back:"I (criança): Confiança × Desconfiança → Esperança. VII (adulto): Generatividade × Estagnação → Cuidado. VIII (velhice): Integridade × Desespero → Sabedoria."},
+  {cat:"Erikson", front:"Qual a relação entre os estágios ao longo do ciclo vital?", back:"O sucesso/fracasso em cada estágio afeta a resolução dos seguintes. A identidade na adolescência é fundamental para intimidade e generatividade adultas, e a generatividade é o principal preditor de integridade na velhice."},
+  {cat:"Depressão / Bullying", front:"Qual a duração mínima do humor deprimido para diagnóstico de distimia (transtorno depressivo persistente)?", back:"Pelo menos 2 anos em adultos e 1 ano em crianças e adolescentes (pode ser humor irritável nesses grupos)."},
+  {cat:"Depressão / Bullying", front:"Quais os quatro conjuntos de sinais e sintomas da depressão?", back:"1) Emocionais (tristeza, isolamento, anedonia, culpa); 2) Cognitivos (pessimismo, indecisão); 3) Motivacionais (desinteresse, baixo rendimento escolar); 4) Vegetativos/motores (fadiga, retardo psicomotor, alterações de apetite/sono/libido)."},
+  {cat:"Depressão / Bullying", front:"Como a depressão pode ser mascarada na adolescência?", back:"Por agitação psicomotora, ataques de raiva, comportamentos delinquentes, hostilidade, autoagressão, exposição a risco, uso de drogas, dor crônica, obesidade e letargia."},
+  {cat:"Depressão / Bullying", front:"Qual o eixo hormonal hiperativo na depressão e o tratamento de base?", back:"O eixo hipotálamo-hipófise-suprarrenal (↑ACTH → ↑cortisol) está hiperativo em cerca de metade dos pacientes. Tratamento: psicofármacos (tricíclicos, ISRS) + psicoterapia combinados."},
+  {cat:"Depressão / Bullying", front:"O que diferencia a depressão das reações de luto?", back:"O luto pode durar até 2 anos e, em geral, não manifesta inibição psicomotora nem sentimento de culpa inapropriada; a depressão é considerada psicopatológica quando se estende demasiadamente ou é desproporcional ao evento."},
+  {cat:"Promoção / APS", front:"Quais princípios devem guiar o atendimento do adolescente na APS?", back:"Integralidade e longitudinalidade, com construção de vínculo entre a equipe e a família, integrando cuidado clínico e promoção da saúde."},
+  {cat:"Promoção / APS", front:"O que deve incluir o aconselhamento ao adolescente na APS?", back:"Escuta qualificada com privacidade e sigilo; informações sobre vacinação, prevenção e contracepção; testes quando cabível; avaliação de saúde mental e hábitos de vida; redução de danos; linguagem simples e sem julgamentos."},
+  {cat:"Promoção / APS", front:"Como a APS pode atuar de forma intersetorial e multiprofissional?", back:"Articulação com escolas (rodas de conversa, espaços de diálogo) e equipe multiprofissional (médico, psicólogo, enfermeiro, nutricionista, assistente social), garantindo integralidade."},
+  {cat:"Ética / ECA", front:"Quando a quebra de sigilo do adolescente é justificada?", back:"Somente em situações de risco iminente à vida ou à integridade do adolescente ou de terceiros (violência, abuso, risco de suicídio, autolesão). No abuso de álcool, é recomendada considerando o risco de morte."},
+  {cat:"Ética / ECA", front:"O que é a autonomia progressiva do adolescente?", back:"Permite que, em determinadas situações (saúde mental, abuso, uso de substâncias e saúde sexual), o adolescente consinta para cuidados sem autorização dos responsáveis, respeitando sua capacidade de compreensão."},
+  {cat:"Ética / ECA", front:"O que estabelecem os artigos 17, 11 e 245 do ECA?", back:"Art. 17: direito ao respeito, privacidade e preservação de informações pessoais. Art. 11: acesso integral à saúde pelo SUS com equidade. Art. 245: dever de comunicar à autoridade casos de suspeita/confirmação de maus-tratos."},
+  {cat:"Ética / ECA", front:"O que o profissional deve fazer quando a quebra de sigilo for necessária?", back:"Informar o adolescente sobre os limites do sigilo e o motivo da divulgação antes de proceder, envolvendo-o na decisão (exceto em risco iminente, quando a proteção da vida prevalece)."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeCat = cat; renderFilters(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+renderFilters();
+render();
+</script>
+</body>
+</html>
