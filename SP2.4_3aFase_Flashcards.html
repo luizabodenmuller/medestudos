@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 2.4 - Flashcards</title>
+<style>
+  :root { --primary:#7a1f3d; --primary-light:#9c3355; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .controls { max-width:900px; margin:0 auto 18px auto; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .filter-btn { background:#fff; border:1px solid #e6c9d3; color:var(--primary); padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { background:#f7ecf0; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .progress-wrap { max-width:900px; margin:0 auto 20px auto; text-align:center; font-size:13px; color:#444; }
+  .progress-bar { width:100%; max-width:400px; margin:6px auto 0 auto; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .2s; }
+  .deck { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card-outer { perspective:1200px; height:255px; }
+  .card-outer.hidden { display:none; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card-outer.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; padding:16px; display:flex; flex-direction:column; box-shadow:0 2px 6px rgba(0,0,0,0.12); overflow:auto; }
+  .card-front { background:#fff; border-top:5px solid var(--primary); }
+  .card-back { background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-light); margin-bottom:8px; font-weight:bold; }
+  .card-back .card-cat { color:#eeccd7; }
+  .card-text { font-size:12.5px; line-height:1.4; flex:1; }
+  .card-hint { font-size:10px; color:#999; text-align:center; margin-top:6px; }
+  .card-back .card-hint { color:#d9b3c0; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 2.4 — "Acabou a bateria!"</h1>
+  <p>Flashcards · 3ª Fase · Consciência, Sono, Dor e Urgência/Emergência</p>
+</header>
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="controls" id="filterControls"></div>
+<div class="deck" id="deck"></div>
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 2.4.</footer>
+
+<script>
+const cards = [
+  {cat:"Consciência", front:"Quais são os dois componentes da consciência e do que dependem?", back:"Nível (grau de alerta): depende das projeções da formação reticular ativadora ascendente (FRAA) para todo o córtex. Conteúdo: depende da função do córtex cerebral (funções nervosas superiores)."},
+  {cat:"Consciência", front:"Como se define coma e qual sua causa?", back:"Estado sem conhecimento de si e do ambiente, com ausência/extrema diminuição do alerta, não responsivo a estímulos e com olhos fechados. Causa: lesão/disfunção da FRAA, do córtex difusamente ou de ambos."},
+  {cat:"Consciência", front:"Por que lesões focais supratentoriais isoladas geralmente não causam coma?", back:"Elas podem comprometer o nível de consciência, mas só levam ao coma se causarem compressão de estruturas contralaterais ou infratentoriais (hérnias subfalcina e transtentorial)."},
+  {cat:"Consciência", front:"O que diferencia coma de estado vegetativo persistente?", back:"O coma pressupõe olhos fechados. Quando se recupera a abertura ocular e a vigília sem recuperar a perceptividade, caracteriza-se o estado vegetativo persistente."},
+  {cat:"Consciência", front:"Quais os quatro princípios para confirmar morte encefálica?", back:"(1) Perfeito conhecimento da etiologia do coma; (2) irreversibilidade do coma; (3) ausência de reflexos do tronco encefálico; (4) ausência de atividade cerebral cortical."},
+  {cat:"Consciência", front:"Quais núcleos, se lesados, causam coma no sistema ativador ascendente?", back:"Os núcleos tegmentares parabraquial e pedunculopontino (glutamatérgicos) e o prosencéfalo basal (colinérgicos/GABAérgicos). São a base do sistema ativador ascendente."},
+  {cat:"Glasgow", front:"Quais os três parâmetros da Escala de Coma de Glasgow e o escore total?", back:"Abertura ocular (1-4), melhor resposta verbal (1-5) e melhor resposta motora (1-6). Escore total de 3 a 15. Mede uma resposta (eferência) — evidência indireta da consciência."},
+  {cat:"Glasgow", front:"Quais situações geram escore de Glasgow falsamente BAIXO?", back:"Uso de bloqueadores neuromusculares, doenças neuromusculares e a síndrome do cativeiro (locked-in), que comprometem a resposta motora sem rebaixamento real da consciência. Lesões de linguagem também reduzem falsamente a nota."},
+  {cat:"Glasgow", front:"O que é a síndrome do cativeiro (locked-in)?", back:"Lesão da porção ventral da ponte que interrompe as fibras motoras (paralisia), mas preserva a FRAA (porção dorsal) — o paciente permanece consciente e se comunica por movimentos verticais dos olhos."},
+  {cat:"Glasgow", front:"Diferencie retirada inespecífica, decorticação e descerebração na resposta motora.", back:"Retirada inespecífica = 4 pontos; padrão flexor (decorticação) = 3 pontos; padrão extensor (descerebração) = 2 pontos. A confusão entre eles reduz a congruência interexaminador (~70-80%)."},
+  {cat:"Sono / Circadiano", front:"Como a adenosina promove o sono?", back:"O ATP consumido na vigília é desfosforilado em adenosina, que inibe (via receptores A1) os neurônios indutores de vigília. Seus níveis sobem na vigília/privação e caem no sono. Cafeína e teofilina são antagonistas de adenosina."},
+  {cat:"Sono / Circadiano", front:"Qual é o marcapasso circadiano e onde fica?", back:"O núcleo supraquiasmático (NSQ), de neurônios GABAérgicos, no hipotálamo logo acima do quiasma óptico. Em luz fraca contínua, o período humano médio é de ~24,1 horas."},
+  {cat:"Sono / Circadiano", front:"Como funciona a alça dos genes do relógio circadiano?", back:"BMAL1 + CLOCK dimerizam e ativam o motivo E-box, induzindo os genes Período (Per) e Criptocromo (Cry). As proteínas PER/CRY voltam ao núcleo e inibem BMAL1/CLOCK, reduzindo a própria transcrição — ciclo de ~24 h."},
+  {cat:"Sono / Circadiano", front:"Como o NSQ recebe informação de luz?", back:"Por células ganglionares intrinsecamente fotossensíveis (contêm melanopsina), que sinalizam luminância (não formam imagem) via trato retino-hipotalâmico. Sua perda (cegos) causa distúrbio do ritmo sem padrão de 24 h."},
+  {cat:"Sono / Circadiano", front:"Qual o papel da melatonina?", back:"Sinaliza a escuridão ('Drácula dos hormônios'): produzida pela pineal, liberada à noite (inibida pela luz), com pico nas primeiras horas da manhã. Reforça os ritmos e ajuda a regularizar o início do sono (jet lag)."},
+  {cat:"Fases do Sono", front:"Quais são os três exames da polissonografia?", back:"EEG (atividade cerebral), EOG (movimentos oculares) e EMG (tônus muscular)."},
+  {cat:"Fases do Sono", front:"O que caracteriza o EEG do estágio N2?", back:"Fusos do sono (oscilações de 8-14 Hz, geradas por marcapasso talâmico) e complexos K (ondas agudas de alta amplitude). Dura 5-15 min; os movimentos oculares quase cessam."},
+  {cat:"Fases do Sono", front:"O que caracteriza o estágio N3 (sono profundo)?", back:"Ondas delta lentas de grande amplitude (≤2 Hz). É o sono de ondas lentas, o estágio mais profundo, com poucos movimentos oculares e tônus baixo."},
+  {cat:"Fases do Sono", front:"O que caracteriza o sono REM?", back:"EEG rápido e de baixa voltagem (parecido com a vigília — 'paradoxal'), movimentos oculares rápidos e atonia muscular. Ocorre ~90 min após adormecer; sonhos vívidos. ~25% do sono total."},
+  {cat:"Fases do Sono", front:"Como se distribuem NREM e REM ao longo da noite?", back:"Cada ciclo dura ~90 min. O sono começa descendo ao N3; ao longo da noite, o NREM (sobretudo N3) diminui e os períodos REM se alongam. ~75% NREM e ~25% REM."},
+  {cat:"Fases do Sono", front:"O que gera a atonia do sono REM e quais neurotransmissores modulam o REM?", back:"Neurônios glutamatérgicos da região subceruleus ativam interneurônios inibitórios (GABA/glicina) no bulbo e medula (atonia). Colinérgicos induzem REM; monoaminérgicos (locus ceruleus/rafe) o suprimem — daí antidepressivos reduzirem o REM."},
+  {cat:"Receptores Cutâneos", front:"Relacione cada mecanorreceptor ao estímulo e à adaptação.", back:"Pacini: vibração de alta frequência (adaptação rápida, campo grande). Meissner: toque leve/vibração de baixa freq. (rápida, campo pequeno). Merkel: pressão/textura (lenta, campo pequeno). Ruffini: estiramento (lenta, campo grande)."},
+  {cat:"Vias Somatossensoriais", front:"Descreva a via coluna dorsal-lemnisco medial.", back:"Fibras Aβ (tato fino, vibração, propriocepção) sobem pela coluna dorsal IPSILATERAL sem sinapse até os núcleos grácil/cuneiforme; decussam no bulbo, ascendem pelo lemnisco medial ao núcleo VP do tálamo e projetam a S1 (área 3b, giro pós-central)."},
+  {cat:"Vias Somatossensoriais", front:"Descreva a via espinotalâmica.", back:"Conduz dor, temperatura e tato grosseiro. Os neurônios de 2ª ordem decussam no MESMO nível da medula (logo após a sinapse) e sobem pelo trato espinotalâmico contralateral até o tálamo (VP e intralaminares) → córtex."},
+  {cat:"Vias Somatossensoriais", front:"O que acontece na sensibilidade após uma lesão medular unilateral?", back:"Perda do tato fino/vibração/propriocepção do MESMO lado da lesão (ipsilateral, coluna dorsal) e perda da dor/temperatura do lado OPOSTO (contralateral, via espinotalâmica que já cruzou)."},
+  {cat:"Dor", front:"O que são nociceptores e por que a dor não é o mesmo que nocicepção?", back:"Nociceptores: terminações livres (fibras C amielínicas e Aδ pouco mielinizadas) que sinalizam lesão. Nocicepção é o processo sensorial; a dor é a percepção, com forte controle cognitivo — pode haver dor sem nociceptor ativo e vice-versa."},
+  {cat:"Dor", front:"O que é a 'sopa inflamatória' e a hiperalgesia?", back:"Substâncias liberadas na lesão (bradicinina, prostaglandinas, substância P, ATP, K+, H+, histamina) que sensibilizam nociceptores, causando hiperalgesia (limiar reduzido/dor aumentada). AINEs tratam ao inibir a síntese de prostaglandinas."},
+  {cat:"Dor", front:"Explique a teoria do portão da dor (Melzack e Wall).", back:"A ativação de mecanorreceptores Aβ (toque) excita um interneurônio inibitório que 'fecha o portão' da via nociceptiva no corno dorsal, reduzindo a dor. Base da massagem e da estimulação elétrica (TENS)."},
+  {cat:"Dor", front:"Como funciona a regulação descendente da dor e o papel dos opioides endógenos?", back:"A substância cinzenta periaquedutal (PAG) projeta aos núcleos da rafe (serotonina) → corno dorsal, deprimindo neurônios nociceptivos. As endorfinas ligam-se a receptores opioides (bloqueados pela naloxona) na PAG, rafe e corno dorsal, gerando analgesia."},
+  {cat:"Dor", front:"Quais canais TRP medeiam calor e frio?", back:"TRPV1: calor acima de 43°C (ativado pela capsaicina das pimentas). TRPM8: frio (ativado pelo mentol, abaixo de 25°C). Cada termorreceptor tende a expressar um único tipo de canal."},
+  {cat:"Urgência x Emergência", front:"Diferencie urgência e emergência.", back:"Urgência: agravo imprevisto, com ou sem risco POTENCIAL de vida, que necessita de assistência imediata. Emergência: risco IMINENTE de vida ou sofrimento intenso, exigindo tratamento imediato. O critério-chave é o risco de vida (iminente vs. não iminente)."},
+  {cat:"Urgência x Emergência", front:"Quais os cinco níveis do Sistema de Triagem de Manchester e os tempos-alvo?", back:"Vermelho (emergência, imediato), laranja (muito urgente, 10 min), amarelo (urgente, 60 min), verde (pouco urgente, 120 min), azul (não urgente, 240 min). Baseado em 52 fluxogramas + discriminadores."},
+  {cat:"Urgência x Emergência", front:"Cite consequências da demora em emergências tempo-dependentes.", back:"IAMCSST (cada hora ↑ mortalidade/reinfarto), sepse/choque séptico (cada hora de atraso no antimicrobiano ↑ mortalidade), dissecção aórtica proximal (0,5-2%/hora) e parada cardíaca (RCP/desfibrilação precoces são decisivas)."},
+  {cat:"TC e RM", front:"Como a TC representa hemorragia, isquemia e edema?", back:"Hemorragias são hiperdensas (brancas). Isquemia e edema são hipodensos (escuros). O edema tem efeito expansivo (comprime sulcos/ventrículos); gliose e encefalomalácia têm efeito atrófico (retrátil)."},
+  {cat:"TC e RM", front:"Quais os valores de atenuação (TC) do liquor e do sangue coagulado?", back:"Liquor: 0 a 10 UH. Sangue coagulado: ~80 UH (sangue normal 35-55). Ar −1.000; água 0; osso 130 a 2.000."},
+  {cat:"TC e RM", front:"Quais as vantagens e limitações da TC e da RM?", back:"TC: rápida, detecta densidades, mas usa radiação ionizante e contraste iodado. RM: excelente contraste entre tecidos (cinzenta/branca/liquor), multiplanar, sem radiação, gadolínio quase sem contraindicação; baseia-se nos prótons de H+."},
+  {cat:"TC e RM", front:"Qual segmento de substância branca liga as áreas de Broca e Wernicke?", back:"O segmento arqueado (fascículo arqueado) do fascículo longitudinal superior, um trato de associação intra-hemisférico."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeCat = cat; renderFilters(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+renderFilters();
+render();
+</script>
+</body>
+</html>

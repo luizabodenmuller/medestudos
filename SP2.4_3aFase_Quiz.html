@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 2.4 - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 2.4 — "Acabou a bateria!"</h1>
+  <p>Quiz · 3ª Fase · Consciência, Sono, Dor e Urgência/Emergência</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 2.4.</footer>
+
+<script>
+const questions = [
+  {
+    q: "O NÍVEL de consciência (grau de alerta) depende principalmente de qual estrutura?",
+    options: ["Do córtex pré-frontal", "Da formação reticular ativadora ascendente (FRAA)", "Do cerebelo", "Da medula espinhal"],
+    correct: 1,
+    explain: "O nível de consciência depende das projeções para todo o córtex vindas da FRAA, situada na transição pontomesencefálica. Já o conteúdo depende da função do córtex cerebral."
+  },
+  {
+    q: "Por definição, o coma pressupõe que o paciente esteja com:",
+    options: ["Olhos abertos e vigília", "Olhos fechados", "Resposta verbal preservada", "Reflexos de tronco ausentes"],
+    correct: 1,
+    explain: "O coma pressupõe olhos fechados. Se há recuperação da abertura ocular e vigília sem perceptividade, caracteriza-se o estado vegetativo persistente."
+  },
+  {
+    q: "Quais são princípios para a confirmação de morte encefálica?",
+    options: ["Idade, sexo e comorbidades", "Conhecimento da etiologia, irreversibilidade, ausência de reflexos de tronco e ausência de atividade cortical", "Apenas a ausência de resposta motora", "Somente o EEG plano"],
+    correct: 1,
+    explain: "A morte encefálica baseia-se em quatro princípios: perfeito conhecimento da etiologia do coma, irreversibilidade, ausência de reflexos do tronco encefálico e ausência de atividade cerebral cortical."
+  },
+  {
+    q: "A Escala de Coma de Glasgow avalia quais três parâmetros?",
+    options: ["Pupila, reflexos e respiração", "Abertura ocular, melhor resposta verbal e melhor resposta motora", "Pressão, pulso e temperatura", "Força, sensibilidade e coordenação"],
+    correct: 1,
+    explain: "A ECG avalia abertura ocular (1-4), melhor resposta verbal (1-5) e melhor resposta motora (1-6), com escore total de 3 a 15."
+  },
+  {
+    q: "Na síndrome do cativeiro (locked-in), o paciente:",
+    options: ["Está inconsciente com olhos abertos", "Está consciente, mas paralisado por lesão ventral da ponte, comunicando-se por movimentos verticais dos olhos", "Tem morte encefálica", "Está em estado vegetativo"],
+    correct: 1,
+    explain: "A lesão da porção ventral da ponte interrompe as fibras motoras (paralisia), mas preserva a FRAA (dorsal); o paciente fica consciente e se comunica por movimentos verticais dos olhos. Pode gerar Glasgow falsamente baixo."
+  },
+  {
+    q: "Como a adenosina atua na regulação do sono?",
+    options: ["Estimula os neurônios de vigília", "Acumula-se na vigília e inibe neurônios indutores de vigília, promovendo o sono", "É liberada apenas durante o sono REM", "Não tem relação com a cafeína"],
+    correct: 1,
+    explain: "A adenosina (do ATP consumido na vigília) inibe os neurônios indutores de vigília via receptores A1; sobe na vigília/privação e cai no sono. A cafeína e a teofilina são antagonistas de adenosina."
+  },
+  {
+    q: "Qual estrutura é o marcapasso central do ritmo circadiano?",
+    options: ["A glândula pineal", "O núcleo supraquiasmático (NSQ) do hipotálamo", "O locus ceruleus", "O tálamo"],
+    correct: 1,
+    explain: "O ritmo circadiano é conduzido por neurônios GABAérgicos do núcleo supraquiasmático (NSQ), no hipotálamo acima do quiasma óptico. O período humano médio em luz fraca contínua é de ~24,1 h."
+  },
+  {
+    q: "No relógio molecular circadiano, qual dupla de proteínas forma o componente positivo que ativa o E-box?",
+    options: ["PER e CRY", "BMAL1 e CLOCK", "TRPV1 e TRPM8", "Orexina e melatonina"],
+    correct: 1,
+    explain: "BMAL1 e CLOCK dimerizam e se ligam ao E-box, induzindo os genes Período (Per) e Criptocromo (Cry); as proteínas PER/CRY depois inibem BMAL1/CLOCK, fechando a alça de ~24 h."
+  },
+  {
+    q: "A melatonina, hormônio que sinaliza a escuridão, é produzida por qual glândula?",
+    options: ["Hipófise", "Glândula pineal", "Suprarrenal", "Tireoide"],
+    correct: 1,
+    explain: "A melatonina é produzida pela glândula pineal, liberada à noite (inibida pela luz), com pico nas primeiras horas da manhã. O NSQ cronometra sua liberação e ela reforça os ritmos circadianos."
+  },
+  {
+    q: "Quais achados no EEG caracterizam o estágio N2 do sono não REM?",
+    options: ["Ondas alfa", "Fusos do sono e complexos K", "Ondas delta de grande amplitude", "Ritmos beta e gama"],
+    correct: 1,
+    explain: "O estágio N2 é caracterizado pelos fusos do sono (8-14 Hz, marcapasso talâmico) e pelos complexos K. O N3 tem ondas delta; o REM tem ritmos rápidos beta/gama."
+  },
+  {
+    q: "O sono REM é chamado de 'sono paradoxal' porque:",
+    options: ["Não há sonhos", "O EEG é rápido e de baixa voltagem, parecido com a vigília, apesar da atonia muscular", "O tônus muscular é máximo", "Ocorre logo ao adormecer"],
+    correct: 1,
+    explain: "No REM, o EEG assemelha-se ao da vigília (rápido, baixa voltagem), há movimentos oculares rápidos e sonhos vívidos, porém com atonia muscular — daí o termo 'paradoxal'."
+  },
+  {
+    q: "Sobre os estágios NREM, é correto afirmar que:",
+    options: ["Os movimentos oculares são rápidos", "Os movimentos oculares estão ausentes, o tônus é baixo e a temperatura corporal cai", "O tônus muscular é máximo", "O EEG é dessincronizado"],
+    correct: 1,
+    explain: "Em todos os estágios do sono não REM, os movimentos oculares estão ausentes, o tônus muscular é baixo, a respiração é lenta e regular e a temperatura corporal cai."
+  },
+  {
+    q: "Qual mecanorreceptor cutâneo responde à vibração de ALTA frequência e é de adaptação rápida?",
+    options: ["Disco de Merkel", "Corpúsculo de Pacini", "Terminação de Ruffini", "Corpúsculo de Meissner"],
+    correct: 1,
+    explain: "O corpúsculo de Pacini (derme profunda/subcutâneo, campo grande) responde melhor a vibrações de alta frequência e é de adaptação rápida. Merkel e Ruffini são de adaptação lenta."
+  },
+  {
+    q: "A via coluna dorsal-lemnisco medial conduz qual tipo de informação e onde decussa?",
+    options: ["Dor e temperatura; decussa na medula", "Tato fino, vibração e propriocepção; decussa no bulbo", "Tato grosseiro; não decussa", "Apenas informação motora"],
+    correct: 1,
+    explain: "A via coluna dorsal-lemnisco medial conduz tato fino/discriminativo, vibração e propriocepção; sobe ipsilateralmente e decussa no bulbo, indo ao VP do tálamo e a S1."
+  },
+  {
+    q: "Após uma hemissecção medular, qual o padrão de déficit sensitivo?",
+    options: ["Perda de tudo do mesmo lado", "Perda do tato/propriocepção ipsilateral e da dor/temperatura contralateral", "Perda apenas da dor bilateralmente", "Nenhum déficit sensitivo"],
+    correct: 1,
+    explain: "O tato fino/vibração/propriocepção (coluna dorsal, cruza no bulbo) tem déficit IPSILATERAL; a dor/temperatura (espinotalâmica, cruza na medula) tem déficit CONTRALATERAL abaixo da lesão."
+  },
+  {
+    q: "Onde estão localizados os nociceptores?",
+    options: ["Apenas no sistema nervoso central", "Na maioria dos tecidos, mas ausentes no SNC (presentes nas meninges)", "Somente na pele", "Apenas no coração"],
+    correct: 1,
+    explain: "Os nociceptores (terminações livres de fibras C e Aδ) estão na pele, ossos, músculos, órgãos e vasos, mas estão notadamente ausentes no SNC — embora presentes nas meninges."
+  },
+  {
+    q: "Segundo a teoria do portão da dor, a ativação de fibras Aβ (toque) reduz a dor porque:",
+    options: ["Bloqueia diretamente o nervo", "Excita um interneurônio inibitório que suprime a sinalização nociceptiva no corno dorsal", "Aumenta a liberação de substância P", "Destrói os nociceptores"],
+    correct: 1,
+    explain: "A teoria do portão (Melzack e Wall): axônios de grande diâmetro (Aβ) excitam um interneurônio inibitório que 'fecha o portão' para os sinais nociceptivos — base da massagem e da TENS."
+  },
+  {
+    q: "Qual bloqueador confirma que a analgesia por endorfinas é mediada por receptores opioides?",
+    options: ["Naloxona", "Atropina", "Flumazenil", "Cafeína"],
+    correct: 0,
+    explain: "A naloxona (bloqueador específico de receptores opioides) impede a analgesia da morfina/endorfinas e a induzida por estimulação elétrica, confirmando a ação via receptores opioides."
+  },
+  {
+    q: "Qual é o critério fundamental que distingue emergência de urgência?",
+    options: ["O local de atendimento", "O risco de vida: iminente na emergência, existente mas não iminente na urgência", "A idade do paciente", "O custo do tratamento"],
+    correct: 1,
+    explain: "O critério fundamental é o risco de vida: na emergência é iminente; na urgência existe, mas não é iminente; nos casos de rotina é inexistente. É um continuum de graus de gravidade."
+  },
+  {
+    q: "No Sistema de Triagem de Manchester, qual cor corresponde à emergência com atendimento imediato?",
+    options: ["Amarelo", "Verde", "Vermelho", "Azul"],
+    correct: 2,
+    explain: "No STM, o vermelho é a emergência (atendimento imediato). Laranja (muito urgente, 10 min), amarelo (urgente, 60 min), verde (pouco urgente, 120 min) e azul (não urgente, 240 min)."
+  },
+  {
+    q: "Na TC de crânio, como aparecem as hemorragias intracranianas agudas?",
+    options: ["Hipodensas (escuras)", "Hiperdensas (brancas)", "Sem alteração de densidade", "Sempre com efeito atrófico"],
+    correct: 1,
+    explain: "As hemorragias são hiperdensas (hiperatenuantes, brancas) na TC. As lesões isquêmicas e o edema são hipodensos; o edema tem efeito expansivo e a gliose/encefalomalácia, efeito atrófico."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>
