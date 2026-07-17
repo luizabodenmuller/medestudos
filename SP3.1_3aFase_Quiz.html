@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.1 - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.1 — "Entre o Peso dos Anos e o Peso do Ar"</h1>
+  <p>Quiz · 3ª Fase · Envelhecimento e Sistema Respiratório</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 3.1.</footer>
+
+<script>
+const questions = [
+  {
+    q: "Qual é a mudança estrutural mais significativa no envelhecimento pulmonar?",
+    options: ["Aumento do número de alvéolos", "Diminuição do diâmetro bronquiolar (por ↓elastina e ↑colágeno)", "Aumento da elasticidade pulmonar", "Redução do volume residual"],
+    correct: 1,
+    explain: "A mudança mais significativa é a diminuição do diâmetro bronquiolar (~10% entre 50 e 80 anos), causada por redução de elastina e aumento de colágeno (tipo III) no tecido de suporte, elevando a resistência pulmonar."
+  },
+  {
+    q: "Como se comportam os volumes pulmonares no idoso?",
+    options: ["↓ volume residual e ↑ capacidade vital", "↑ volume residual e ↓ capacidade vital, com CPT pouco alterada", "Todos os volumes aumentam", "Todos os volumes diminuem igualmente"],
+    correct: 1,
+    explain: "Há redução da capacidade vital e aumento do volume residual (e da CRF); a capacidade pulmonar total (CPT) pouco se altera. A espirometria mostra declínio de CVF, VEF1 e FEF25-75."
+  },
+  {
+    q: "O que é o inflamm-aging?",
+    options: ["Resposta imune aumentada e eficiente do idoso", "Um estado de inflamação crônica de baixo grau característico do envelhecimento", "Uma doença autoimune específica", "A ausência de inflamação no idoso"],
+    correct: 1,
+    explain: "Inflamm-aging é o processo de inflamação crônica de baixo grau encontrado em idosos, com altas concentrações de citocinas pró-inflamatórias; associa-se à imunossenescência e ao aumento da morbimortalidade."
+  },
+  {
+    q: "Por que a resposta às vacinas é reduzida no idoso?",
+    options: ["Porque não produzem linfócitos B", "Porque os anticorpos produzidos pelos linfócitos B são de baixa afinidade", "Porque têm excesso de linfócitos T virgens", "Porque a IL-2 está aumentada"],
+    correct: 1,
+    explain: "Embora a quantidade de linfócitos B se mantenha, seus anticorpos são de baixa afinidade (pouco específicos e eficientes), o que se reflete em menor eficácia vacinal comparada à dos jovens."
+  },
+  {
+    q: "Na sarcopenia do envelhecimento, quais fibras musculares têm redução predominante de tamanho?",
+    options: ["Fibras tipo I (contração lenta)", "Fibras tipo II (contração rápida)", "Ambas igualmente", "Nenhuma fibra é afetada"],
+    correct: 1,
+    explain: "A redução do número de fibras ocorre proporcionalmente entre os tipos, mas a diminuição do TAMANHO das fibras ocorre predominantemente nas do tipo II (contração rápida)."
+  },
+  {
+    q: "Quantos critérios de Fried são necessários para o diagnóstico de fragilidade?",
+    options: ["1 ou mais", "3 ou mais dos 5 critérios", "Todos os 5", "Nenhum, é apenas clínico"],
+    correct: 1,
+    explain: "A presença de 3 ou mais dos 5 critérios de Fried (perda de peso, exaustão, fraqueza, lentidão da marcha e baixa atividade física) define fragilidade; 1 ou 2 definem pré-fragilidade."
+  },
+  {
+    q: "Por que é clinicamente importante diferenciar desnutrição, sarcopenia e caquexia?",
+    options: ["Porque têm a mesma causa", "Porque diferem no potencial de reversibilidade e na abordagem terapêutica", "Porque nenhuma tem tratamento", "Porque só ocorrem em jovens"],
+    correct: 1,
+    explain: "Elas diferem na reversibilidade: a desnutrição pode ser corrigida com acesso a alimentos e educação, enquanto a caquexia (ex.: cardíaca) só é substancialmente revertida tratando a doença subjacente."
+  },
+  {
+    q: "Segundo a OMS, qual o ponto de corte de hemoglobina para anemia?",
+    options: ["< 10 g/dL em ambos os sexos", "< 13 g/dL em homens e < 12 g/dL em mulheres", "< 15 g/dL em ambos", "< 8 g/dL em ambos"],
+    correct: 1,
+    explain: "O critério da OMS (1968) define anemia como Hb < 13 g/dL em homens e < 12 g/dL em mulheres. A anemia é fator de risco independente para fragilidade, declínio funcional/cognitivo e mortalidade."
+  },
+  {
+    q: "Em um homem idoso com anemia ferropriva, qual investigação é mandatória?",
+    options: ["Apenas repor ferro e observar", "Investigar sangramento gastrointestinal (endoscopia bidirecional)", "Iniciar eritropoietina", "Transfusão imediata"],
+    correct: 1,
+    explain: "Em homens e mulheres pós-menopausa, a deficiência de ferro deve ser considerada secundária a sangramento gastrointestinal até prova em contrário (risco de malignidade GI até 9%), indicando-se endoscopia digestiva alta e colonoscopia."
+  },
+  {
+    q: "Qual o mecanismo central da anemia de doença crônica/inflamação?",
+    options: ["Perda de sangue aguda", "Aumento da hepcidina (por IL-6/TNF-α) bloqueando a liberação do ferro dos estoques", "Deficiência absoluta de ferro na dieta", "Hemólise auto-imune"],
+    correct: 1,
+    explain: "Os estoques de ferro estão preservados nos macrófagos, mas há redistribuição inadequada devido à elevação da hepcidina induzida por citocinas inflamatórias (IL-6, TNF-α), que bloqueia a disponibilização do ferro."
+  },
+  {
+    q: "O que distingue clinicamente a deficiência de vitamina B12 da de folato?",
+    options: ["Só a de folato causa anemia", "A de B12 cursa com sintomas neurológicos; a de folato não", "A de B12 tem latência de meses; a de folato de anos", "Não há diferença clínica"],
+    correct: 1,
+    explain: "A deficiência de B12 cursa com sintomas neurológicos (parestesias, ataxia, sinal de Lhermitte, degeneração combinada subaguda), que podem preceder as alterações hematológicas; a de folato não os apresenta. Latência: B12 anos, folato meses."
+  },
+  {
+    q: "Como a pneumonia frequentemente se apresenta no idoso?",
+    options: ["Sempre com febre alta e tosse produtiva", "De forma atípica: confusão, imobilidade, quedas ou incontinência", "Apenas com dor torácica pleurítica", "Sem nenhum sintoma"],
+    correct: 1,
+    explain: "A apresentação é frequentemente atípica, manifestando-se como comprometimento funcional agudo (confusão, imobilidade, quedas, incontinência) em vez de sintomas respiratórios clássicos; a febre pode estar ausente."
+  },
+  {
+    q: "Qual o fator de risco mais forte para pneumonia adquirida na comunidade?",
+    options: ["Tabagismo", "Idade avançada (≥65 anos)", "Sexo masculino", "Uso de estatinas"],
+    correct: 1,
+    explain: "A idade avançada (≥65 anos) é o fator de risco mais forte. Outros incluem tabagismo (OR 1,57), DPOC (OR 1,99), estado nutricional deficiente (OR 6,14) e imunossupressão (OR 3,10)."
+  },
+  {
+    q: "Qual o principal fator de risco para DPOC e sua contribuição para os casos?",
+    options: ["Poluição, ~50% dos casos", "Tabagismo, responsável por mais de 90% dos casos", "Deficiência de alfa-1-antitripsina, ~40%", "Infecções virais, ~70%"],
+    correct: 1,
+    explain: "O tabagismo é o principal fator de risco, responsável por mais de 90% dos casos, com tempo de latência de 20-30 anos. Causa perda média de ~40 mL/ano no VEF1 (vs. ~25 mL/ano normal)."
+  },
+  {
+    q: "Qual desequilíbrio molecular está na base do enfisema?",
+    options: ["Excesso de surfactante", "Desequilíbrio entre proteases e antiproteases (excesso de elastases)", "Falta de muco", "Excesso de alfa-1-antitripsina"],
+    correct: 1,
+    explain: "O enfisema resulta de desequilíbrio entre elastases e antielastases: a inflamação pela fumaça aumenta as proteinases, que degradam elastina e a matriz extracelular, destruindo as paredes alveolares."
+  },
+  {
+    q: "Qual é o único fator de risco genético estabelecido para a DPOC?",
+    options: ["Mutação no gene CFTR", "Deficiência grave de alfa-1-antitripsina", "Deficiência de surfactante", "Mutação BRCA"],
+    correct: 1,
+    explain: "A deficiência grave de alfa-1-antitripsina (a principal antiprotease pulmonar) é o único fator de risco genético implicado na DPOC, associada a enfisema pan-acinar e limitação ao fluxo aéreo em idade precoce (~40 anos)."
+  },
+  {
+    q: "Como se define a bronquite crônica?",
+    options: ["Tosse por 1 semana", "Tosse produtiva persistente por 3 meses em 2 anos consecutivos", "Dispneia isolada", "Sibilância reversível"],
+    correct: 1,
+    explain: "A bronquite crônica é definida clinicamente pela presença de tosse produtiva persistente por 3 meses em 2 anos consecutivos, excluídas outras causas de tosse crônica."
+  },
+  {
+    q: "Sobre a vacinação do idoso, qual a recomendação para a influenza?",
+    options: ["Dose única na vida", "Dose anual, preferencialmente a quadrivalente de alta concentração (HD4V)", "A cada 5 anos", "Não é recomendada acima de 60 anos"],
+    correct: 1,
+    explain: "Recomenda-se dose única anual, preferencialmente com a vacina quadrivalente de alta concentração (high dose, HD4V), no idoso."
+  },
+  {
+    q: "Qual vacina é agora recomendada ao idoso a partir dos 60 anos (rotina aos 70) contra infecção respiratória?",
+    options: ["Vacina contra o vírus sincicial respiratório (VSR)", "BCG", "Vacina contra febre tifoide", "Vacina contra cólera"],
+    correct: 0,
+    explain: "A vacina contra o vírus sincicial respiratório (VSR — Arexvy® ou Abrysvo®) é recomendada a partir dos 60 anos (rotina a partir dos 70), em dose única, a qualquer momento do ano."
+  },
+  {
+    q: "Qual o papel da radiografia de tórax na DPOC?",
+    options: ["É o exame que fecha o diagnóstico de DPOC", "Não diagnostica nem estadia a DPOC, mas afasta diferenciais e complicações", "Substitui a espirometria", "É indicada anualmente para todos"],
+    correct: 1,
+    explain: "A radiografia não é indicada para diagnóstico nem estadiamento da DPOC (feito por espirometria), mas é útil para afastar diagnósticos diferenciais/comorbidades e detectar complicações (pneumotórax, pneumonia)."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>

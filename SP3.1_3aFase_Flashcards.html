@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.1 - Flashcards</title>
+<style>
+  :root { --primary:#7a1f3d; --primary-light:#9c3355; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .controls { max-width:900px; margin:0 auto 18px auto; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .filter-btn { background:#fff; border:1px solid #e6c9d3; color:var(--primary); padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { background:#f7ecf0; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .progress-wrap { max-width:900px; margin:0 auto 20px auto; text-align:center; font-size:13px; color:#444; }
+  .progress-bar { width:100%; max-width:400px; margin:6px auto 0 auto; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .2s; }
+  .deck { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card-outer { perspective:1200px; height:255px; }
+  .card-outer.hidden { display:none; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card-outer.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; padding:16px; display:flex; flex-direction:column; box-shadow:0 2px 6px rgba(0,0,0,0.12); overflow:auto; }
+  .card-front { background:#fff; border-top:5px solid var(--primary); }
+  .card-back { background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-light); margin-bottom:8px; font-weight:bold; }
+  .card-back .card-cat { color:#eeccd7; }
+  .card-text { font-size:12.5px; line-height:1.4; flex:1; }
+  .card-hint { font-size:10px; color:#999; text-align:center; margin-top:6px; }
+  .card-back .card-hint { color:#d9b3c0; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.1 — "Entre o Peso dos Anos e o Peso do Ar"</h1>
+  <p>Flashcards · 3ª Fase · Envelhecimento e Sistema Respiratório</p>
+</header>
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="controls" id="filterControls"></div>
+<div class="deck" id="deck"></div>
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 3.1.</footer>
+
+<script>
+const cards = [
+  {cat:"Senescência Respiratória", front:"Qual a mudança estrutural mais significativa no envelhecimento pulmonar e sua causa?", back:"A diminuição do diâmetro bronquiolar (~10% entre 50 e 80 anos), causada principalmente por redução de elastina e aumento de colágeno (tipo III) no tecido de suporte após os 40 anos — aumentando a resistência pulmonar."},
+  {cat:"Senescência Respiratória", front:"O que caracteriza o 'pulmão senil'?", back:"Diminuição da difusão de O₂, redução do fluxo expiratório, aumento da complacência, diminuição da elasticidade pulmonar e fechamento precoce das vias aéreas."},
+  {cat:"Senescência Respiratória", front:"Como se alteram os volumes pulmonares no idoso?", back:"↓ capacidade vital (CV) e capacidade inspiratória; ↑ volume residual (VR) e capacidade residual funcional (CRF); a capacidade pulmonar total (CPT) pouco se altera. Espirometria: ↓ CVF, VEF1 e FEF25-75."},
+  {cat:"Senescência Respiratória", front:"Por que a tosse se torna menos eficaz no idoso?", back:"Enrijecimento da caixa torácica (osteoporose, calcificação das cartilagens costais) causa déficit de ~25% na força do diafragma (desvantagem mecânica), além de sarcopenia dos músculos respiratórios e função mucociliar lenta."},
+  {cat:"Senescência Respiratória", front:"Qual o papel do surfactante e o que ocorre com ele no idoso?", back:"Secretado pelos pneumócitos tipo II, mantém a tensão superficial alveolar baixa; tem função protetora e auxilia macrófagos. Está reduzido no idoso — risco de atelectasias, ↑permeabilidade alveolar e edema."},
+  {cat:"Imunossenescência", front:"Diferencie inflamm-aging e imunossenescência.", back:"Inflamm-aging: inflamação crônica de baixo grau do idoso (↑citocinas pró-inflamatórias). Imunossenescência: respostas imunológicas atenuadas, sobretudo a agentes infecciosos. Juntas aumentam a morbimortalidade."},
+  {cat:"Imunossenescência", front:"Como se alteram os linfócitos T no envelhecimento?", back:"↑ proporção de células de memória e ↓ virgens (naïve); involução tímica; fenótipo senescente (↓IL-2, telômeros curtos, limite de Hayflick); maior chance de fenômenos autoimunes e menor reatividade a novos antígenos."},
+  {cat:"Imunossenescência", front:"Por que a resposta às vacinas é menor no idoso (linfócitos B)?", back:"Embora a quantidade de linfócitos B se mantenha, os anticorpos produzidos são de BAIXA AFINIDADE (menos específicos e eficientes), refletindo em menor eficácia vacinal. Também aumentam os autoanticorpos."},
+  {cat:"Imunossenescência", front:"Quais citocinas se alteram com a idade?", back:"↓ IL-2 (fator de crescimento do linfócito T) e ↑ IL-6, IL-1 e TNF-α. A IL-6 aumenta com a idade e associa-se a distúrbios inflamatórios crônicos."},
+  {cat:"Processos Consuntivos", front:"O que é sarcopenia e quais os critérios diagnósticos (EWGSOP)?", back:"Perda progressiva e generalizada de massa e função muscular. Critérios: ↓ massa muscular, ↓ força muscular e ↓ desempenho físico. Entre 50-80 anos há ↓35% no nº de fibras e ↓30% no tamanho (predomínio das tipo II)."},
+  {cat:"Processos Consuntivos", front:"O que é caquexia e como se relaciona com a sarcopenia?", back:"Síndrome catabólica associada a doença grave (câncer, ICC, DPOC, DRC), com perda de peso involuntária sem edema (≥5% em ≤12 meses), anorexia e inflamação. Muitos caquéticos são sarcopênicos (sarcopenia é um elemento da caquexia), mas nem todo sarcopênico é caquético."},
+  {cat:"Processos Consuntivos", front:"Quais os critérios de fragilidade de Fried?", back:"Cinco itens (≥3 = frágil; 1-2 = pré-frágil): perda involuntária de peso (≥4,5 kg ou ≥5%/ano), exaustão/fadiga, fraqueza (força de preensão), lentidão da marcha e baixa atividade física."},
+  {cat:"Processos Consuntivos", front:"Por que a diferenciação entre desnutrição, sarcopenia e caquexia é clinicamente importante?", back:"Porque diferem em reversibilidade: a desnutrição pode ser abordada com acesso a alimentos e educação, enquanto a caquexia (ex.: cardíaca) só é revertida com o tratamento da doença subjacente."},
+  {cat:"Anemia no Idoso", front:"Qual a definição de anemia da OMS?", back:"Hemoglobina < 13 g/dL em homens e < 12 g/dL em mulheres. A prevalência aumenta com a idade; é fator de risco independente para fragilidade, declínio funcional/cognitivo, hospitalização e mortalidade."},
+  {cat:"Anemia no Idoso", front:"Quais as três grandes categorias de anemia no idoso (regra dos terços)?", back:"~1/3 deficiência nutricional (ferro, B12, folato), ~1/3 doença renal crônica/inflamação crônica, e ~1/3 anemia inexplicada. Podem coexistir."},
+  {cat:"Anemia no Idoso", front:"O que sempre investigar numa anemia ferropriva em homem ou mulher pós-menopausa?", back:"Sangramento gastrointestinal oculto até prova em contrário (risco de malignidade GI até 9%) — indica-se endoscopia digestiva alta + colonoscopia (endoscopia bidirecional), mesmo sem sintomas."},
+  {cat:"Anemia no Idoso", front:"Qual o mecanismo da anemia de doença crônica/inflamação?", back:"Os estoques de ferro estão preservados nos macrófagos, mas há redistribuição inadequada por aumento da hepcidina (induzida por IL-6 e TNF-α), que bloqueia a liberação do ferro. Anemia normo/microcítica leve a moderada."},
+  {cat:"Anemia no Idoso", front:"Como diferenciar clinicamente a deficiência de B12 da de folato?", back:"A deficiência de B12 cursa com sintomas neurológicos (parestesias, ataxia, sinal de Lhermitte, degeneração combinada subaguda) que podem preceder as alterações hematológicas; a de folato NÃO tem sintomas neurológicos. Latência: B12 anos, folato meses."},
+  {cat:"Anemia no Idoso", front:"Como se trata a deficiência de vitamina B12?", back:"Suplementação oral 1.000-2.000 mcg/dia (não inferior à IM; absorção passiva suficiente mesmo na anemia perniciosa). IM (1.000 mcg) na deficiência grave, manifestações neurológicas ou má absorção documentada."},
+  {cat:"Pneumopatias no Idoso", front:"Quais as doenças pulmonares mais comuns no idoso?", back:"Pneumonia, DPOC, asma, câncer de pulmão e fibrose pulmonar idiopática. Frequentemente se apresentam de forma atípica e são subdiagnosticadas."},
+  {cat:"Pneumopatias no Idoso", front:"Como a pneumonia pode se apresentar de forma atípica no idoso?", back:"Como comprometimento funcional agudo (confusão, imobilidade, quedas, incontinência) em vez de sintomas respiratórios clássicos; a febre pode estar ausente."},
+  {cat:"Pneumopatias no Idoso", front:"Qual o fator de risco mais forte para pneumonia adquirida na comunidade?", back:"A idade avançada (≥65 anos). Outros: pneumonia prévia, tabagismo (OR 1,57), DPOC (OR 1,99), estado nutricional deficiente (OR 6,14), imunossupressão (OR 3,10) e má saúde oral (OR 2,78)."},
+  {cat:"Pneumopatias no Idoso", front:"Cite medidas não farmacológicas essenciais no manejo respiratório do idoso.", back:"Vacinação, cessação do tabagismo, reabilitação pulmonar (6-8 semanas), educação/técnica inalatória, oxigenoterapia quando indicada, suporte nutricional e higiene oral (prevenção de pneumonia)."},
+  {cat:"Fisiopatologia DPOC", front:"O que define a DPOC e qual seu achado fisiopatológico central?", back:"Obstrução não totalmente reversível ao fluxo aéreo, presente em todos os estágios. O achado central é a inflamação pulmonar crônica. Engloba enfisema (patológico) e bronquite crônica (clínica)."},
+  {cat:"Fisiopatologia DPOC", front:"Qual o principal fator de risco da DPOC e seu impacto no VEF1?", back:"O tabagismo (>90% dos casos), com latência de 20-30 anos. Causa perda média de ~40 mL/ano no VEF1, contra ~25 mL/ano do envelhecimento normal."},
+  {cat:"Fisiopatologia DPOC", front:"Qual o mecanismo do enfisema?", back:"Desequilíbrio proteases × antiproteases (excesso de elastases). A inflamação induzida pela fumaça aumenta proteinases que degradam elastina e a matriz extracelular, destruindo paredes alveolares e reduzindo a elasticidade pulmonar."},
+  {cat:"Fisiopatologia DPOC", front:"Qual o único fator de risco genético da DPOC?", back:"A deficiência grave de alfa-1-antitripsina (principal antiprotease pulmonar), associada a enfisema pan-acinar e limitação ao fluxo aéreo em idade precoce (~40 anos)."},
+  {cat:"Fisiopatologia DPOC", front:"Como se define a bronquite crônica?", back:"Tosse produtiva persistente por 3 meses em 2 anos consecutivos (excluídas outras causas). Há inflamação crônica, hiperplasia das glândulas mucosas e aumento das células caliciformes nas vias aéreas."},
+  {cat:"Fisiopatologia DPOC", front:"Por que o VEF1 não é o melhor preditor isolado na DPOC?", back:"Há fraca correlação entre VEF1 e sintomas/capacidade física; o grau de dispneia pode prever melhor a sobrevida em 5 anos. Por isso usa-se avaliação multidimensional (ex.: escore BODE)."},
+  {cat:"Vacinação", front:"Qual vacina influenza é preferível no idoso e em que esquema?", back:"Dose única anual, preferencialmente a quadrivalente de alta concentração (high dose, HD4V)."},
+  {cat:"Vacinação", front:"Qual o esquema das vacinas pneumocócicas no idoso?", back:"VPC20 em dose única, OU esquema sequencial iniciando com VPC15 (ou VPC13), seguida de VPP23 após 6-12 meses e uma 2ª dose de VPP23 cinco anos depois."},
+  {cat:"Vacinação", front:"Qual o esquema da vacina contra herpes zóster?", back:"Rotina a partir dos 50 anos: vacina recombinante/inativada (VZR), duas doses com intervalo de dois meses (0-2)."},
+  {cat:"Vacinação", front:"Qual vacina foi recentemente incorporada para o idoso contra o VSR?", back:"A vacina contra o vírus sincicial respiratório (Arexvy® ou Abrysvo®), recomendada a partir dos 60 anos (rotina a partir dos 70), dose única, a qualquer momento (independe da sazonalidade)."},
+  {cat:"Imagem RX/TC", front:"Qual o papel da radiografia de tórax na DPOC?", back:"Não é indicada para diagnóstico nem estadiamento (feito por espirometria), mas serve para afastar diagnósticos diferenciais/comorbidades e complicações. Sinais: retificação diafragmática, ↑espaço retroesternal, hipertransparência, ↓trama vascular."},
+  {cat:"Imagem RX/TC", front:"Qual o papel da radiografia de tórax na pneumonia?", back:"É o exame complementar mais importante — essencial para diagnóstico, avaliação de gravidade e detecção de complicações. O limiar para solicitá-la deve ser MENOR em idosos, portadores de DPOC/doença pulmonar crônica e ICC."},
+  {cat:"Imagem RX/TC", front:"Como é a resolução radiológica da pneumonia?", back:"É lenta e posterior à recuperação clínica: completa em ~2 semanas em metade dos casos e em ~6 semanas em 2/3. Repetir o RX após 6 semanas em fumantes >50 anos (risco de carcinoma oculto)."},
+  {cat:"Imagem RX/TC", front:"Quando a TC de tórax é útil na DPOC?", back:"Não é rotineira, mas é superior para avaliar a magnitude/distribuição do enfisema, rastrear carcinoma broncopulmonar, investigar complicações (ex.: TEP) e avaliar cirurgia de redução de volume pulmonar."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeCat = cat; renderFilters(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+renderFilters();
+render();
+</script>
+</body>
+</html>
