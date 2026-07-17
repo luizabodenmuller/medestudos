@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 2.3 - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:21px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 2.3 — "Caminhos turvos"</h1>
+  <p>Quiz · 3ª Fase · Visão, Refração e Transtornos da Visão</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 2.3.</footer>
+
+<script>
+const questions = [
+  {
+    q: "Quais fotorreceptores são responsáveis pela visão de cores e atuam na luz do dia (visão fotópica)?",
+    options: ["Os bastonetes", "Os cones", "As células ganglionares", "As células amácrinas"],
+    correct: 1,
+    explain: "Apenas os cones (e não os bastonetes) são responsáveis pela visão de cores; a visão diurna (fotópica) depende inteiramente dos cones. Os bastonetes atuam na visão escotópica (noturna)."
+  },
+  {
+    q: "No escuro, o que mantém os canais de Na+ do bastonete abertos, gerando a 'corrente do escuro'?",
+    options: ["A rodopsina ativada", "O GMPc (monofosfato de guanosina cíclico)", "A transducina", "O cálcio intracelular"],
+    correct: 1,
+    explain: "No escuro, o segundo mensageiro GMPc (produzido pela guanilato-ciclase) mantém os canais de Na+ abertos, causando a corrente do escuro e mantendo a célula despolarizada (~−30 mV)."
+  },
+  {
+    q: "Qual é a resposta do fotorreceptor à luz?",
+    options: ["Despolarização", "Hiperpolarização", "Disparo de potenciais de ação", "Nenhuma alteração"],
+    correct: 1,
+    explain: "A luz reduz o GMPc (via rodopsina → transducina → PDE), fechando os canais de Na+ e tornando a membrana mais negativa — os fotorreceptores são hiperpolarizados em resposta à luz."
+  },
+  {
+    q: "Coloque em ordem a cascata de fototransdução após a luz ativar a rodopsina:",
+    options: ["Transducina → PDE → hidrólise do GMPc → fechamento dos canais de Na+", "PDE → transducina → aumento do GMPc → abertura dos canais", "Transducina → guanilato-ciclase → aumento do GMPc", "Fechamento dos canais → transducina → PDE"],
+    correct: 0,
+    explain: "A luz ativa a rodopsina, que ativa a proteína G transducina, que ativa a fosfodiesterase (PDE); esta hidrolisa o GMPc, reduzindo seus níveis e fechando os canais de Na+, com hiperpolarização."
+  },
+  {
+    q: "No quiasma óptico, quais fibras cruzam para o lado oposto?",
+    options: ["As fibras temporais", "As fibras nasais", "Todas as fibras", "Nenhuma fibra"],
+    correct: 1,
+    explain: "No quiasma óptico, as fibras nasais de cada olho cruzam para o lado oposto (as temporais seguem ipsilaterais), de modo que o hemicampo direito é processado no hemisfério esquerdo e vice-versa."
+  },
+  {
+    q: "Onde a maioria dos axônios do trato óptico faz sinapse antes de chegar ao córtex visual?",
+    options: ["No núcleo pré-tectal", "No corpo geniculado lateral (CGL) do tálamo", "No colículo superior", "Na hipófise"],
+    correct: 1,
+    explain: "A maioria dos axônios faz sinapse no corpo geniculado lateral do tálamo, que se projeta para o córtex visual do lobo occipital. As colaterais vão ao mesencéfalo (controle pupilar)."
+  },
+  {
+    q: "Como se corrige a miopia?",
+    options: ["Com lente convexa (positiva)", "Com lente côncava (negativa)", "Com lente cilíndrica", "Com lente de contato rígida apenas"],
+    correct: 1,
+    explain: "Na miopia a imagem se forma antes da retina (bulbo alongado ou refração excessiva); corrige-se com lente côncava (negativa), que diverge os raios. A hipermetropia usa lente convexa."
+  },
+  {
+    q: "Por que a presbiopia NÃO é considerada um erro de refração?",
+    options: ["Porque só ocorre em crianças", "Porque decorre da perda do poder acomodativo com a idade, não da forma do olho", "Porque é causada por opacidade do cristalino", "Porque afeta apenas a visão de cores"],
+    correct: 1,
+    explain: "A presbiopia decorre da perda do poder acomodativo relacionada à idade (~40 anos), manifestando-se por dificuldade para perto — não é um erro refrativo por forma do olho."
+  },
+  {
+    q: "Qual o tratamento de escolha para a catarata?",
+    options: ["Colírios que dissolvem a opacidade", "Substituição do cristalino por lente artificial implantada", "Fotocoagulação a laser", "Uso de lentes convexas"],
+    correct: 1,
+    explain: "A catarata é a opacidade do cristalino; o tratamento de escolha consiste em substituir o cristalino por uma lente artificial implantada."
+  },
+  {
+    q: "Sobre o glaucoma, qual afirmação está correta?",
+    options: ["É sempre causado por PIO elevada", "É uma neuropatia óptica; a PIO elevada é apenas um fator de risco", "É a principal causa de cegueira reversível", "Nunca ocorre com PIO normal"],
+    correct: 1,
+    explain: "O glaucoma é uma neuropatia óptica com perda progressiva dos axônios das células ganglionares. A PIO elevada é apenas um fator de risco — há glaucoma com PIO normal e PIO elevada sem glaucoma."
+  },
+  {
+    q: "Qual estrutura drena o humor aquoso, cujo bloqueio eleva a pressão intraocular?",
+    options: ["O ducto lacrimonasal", "O seio venoso da esclera (canal de Schlemm)", "A tuba auditiva", "O nervo óptico"],
+    correct: 1,
+    explain: "O humor aquoso, secretado pelo epitélio ciliar, é drenado pelo seio venoso da esclera (canal de Schlemm). Se esse fluxo é bloqueado, o humor aquoso acumula e aumenta a PIO."
+  },
+  {
+    q: "Qual pigmento é expresso pelas células ganglionares intrinsecamente fotossensíveis (ipRGCs)?",
+    options: ["Rodopsina", "Melanopsina", "Iodopsina", "Transducina"],
+    correct: 1,
+    explain: "As ipRGCs expressam melanopsina (opsina tipo Gq, pico ~480 nm, luz azul) e respondem à luz de forma autônoma, sem depender dos fotorreceptores clássicos. São o ponto de partida das vias não visuais."
+  },
+  {
+    q: "A via retino-hipotalâmica termina em qual estrutura, o marcapasso circadiano central?",
+    options: ["Núcleo pré-tectal olivar", "Núcleo supraquiasmático (NSQ)", "Corpo geniculado lateral", "Núcleo de Edinger-Westphal"],
+    correct: 1,
+    explain: "As ipRGCs M1 projetam, pelo trato retino-hipotalâmico, ao núcleo supraquiasmático (NSQ) do hipotálamo — o marcapasso circadiano central. A luz adianta/atrasa o relógio via expressão de Per."
+  },
+  {
+    q: "O que explica os reflexos pupilares direto e consensual?",
+    options: ["A projeção do núcleo pré-tectal olivar (NPO) bilateralmente aos núcleos de Edinger-Westphal", "A ação direta da luz sobre o cristalino", "A contração do músculo ciliar", "A drenagem do humor aquoso"],
+    correct: 0,
+    explain: "Do NPO partem fibras que se projetam bilateralmente (via comissura posterior) para os núcleos de Edinger-Westphal de ambos os lados — o que explica os reflexos direto e consensual."
+  },
+  {
+    q: "Qual é a primeira lesão visível da retinopatia diabética e sua causa?",
+    options: ["Exsudatos algodonosos, por hemorragia", "Microaneurismas, por perda dos pericitos perivasculares", "Neovascularização, por VEGF", "Descolamento de retina, por tração"],
+    correct: 1,
+    explain: "Os microaneurismas são a primeira lesão visível, resultantes da perda dos pericitos perivasculares. Surgem cerca de 3 anos após o diagnóstico do diabetes."
+  },
+  {
+    q: "O que caracteriza a forma PROLIFERATIVA da retinopatia diabética?",
+    options: ["Apenas microaneurismas", "A presença de neovascularização (neovasos)", "Somente exsudatos duros", "Ausência de qualquer alteração"],
+    correct: 1,
+    explain: "A retinopatia diabética é classificada conforme a presença de neovascularização retiniana: a forma proliferativa caracteriza-se por qualquer neovaso em câmara posterior (impulsionado pelo VEGF na isquemia)."
+  },
+  {
+    q: "Qual a base fundamental do tratamento da retinopatia diabética?",
+    options: ["Apenas laser", "Controle glicêmico rigoroso associado ao controle de HAS e dislipidemia", "Somente injeções de anti-VEGF", "Uso de óculos corretivos"],
+    correct: 1,
+    explain: "Todo tratamento ocular só tem sucesso quando associado ao controle glicêmico rigoroso e das demais comorbidades (HAS, dislipidemia). O tratamento ocular inclui laserterapia e farmacoterapia intravítrea."
+  },
+  {
+    q: "Qual exame é o padrão-ouro para detecção de fluido intra/sub-retiniano e avaliação de edema macular?",
+    options: ["Tonometria", "Campimetria", "OCT (tomografia de coerência óptica)", "Acuidade visual"],
+    correct: 2,
+    explain: "A OCT é uma imagem transversal não invasiva de alta resolução, sendo o padrão-ouro para detecção de fluido intrarretiniano/sub-retiniano e avaliação/manejo do edema macular diabético."
+  },
+  {
+    q: "Qual o padrão-ouro para medir a pressão intraocular?",
+    options: ["Tonometria de aplanação de Goldmann (GAT)", "Tonopen", "iCare", "Tonometria de rebote"],
+    correct: 0,
+    explain: "A tonometria de aplanação de Goldmann (GAT) é o padrão-ouro mais utilizado. A espessura corneana central afeta a leitura (córneas espessas dão PIO falsamente alta)."
+  },
+  {
+    q: "Sobre o olho como 'janela' para doenças sistêmicas, qual achado indica hipertensão maligna?",
+    options: ["Estreitamento arteriolar leve", "Cruzamentos arteriovenosos", "Papiledema (edema do disco óptico)", "Fio de cobre"],
+    correct: 2,
+    explain: "Na retinopatia hipertensiva grave, o edema do disco óptico (papiledema) indica hipertensão maligna. A retinopatia hipertensiva moderada associa-se a risco 2-4× maior de AVC."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>

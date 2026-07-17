@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 2.3 - Flashcards</title>
+<style>
+  :root { --primary:#7a1f3d; --primary-light:#9c3355; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:21px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .controls { max-width:900px; margin:0 auto 18px auto; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .filter-btn { background:#fff; border:1px solid #e6c9d3; color:var(--primary); padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { background:#f7ecf0; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .progress-wrap { max-width:900px; margin:0 auto 20px auto; text-align:center; font-size:13px; color:#444; }
+  .progress-bar { width:100%; max-width:400px; margin:6px auto 0 auto; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .2s; }
+  .deck { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card-outer { perspective:1200px; height:250px; }
+  .card-outer.hidden { display:none; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card-outer.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; padding:16px; display:flex; flex-direction:column; box-shadow:0 2px 6px rgba(0,0,0,0.12); overflow:auto; }
+  .card-front { background:#fff; border-top:5px solid var(--primary); }
+  .card-back { background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-light); margin-bottom:8px; font-weight:bold; }
+  .card-back .card-cat { color:#eeccd7; }
+  .card-text { font-size:12.5px; line-height:1.4; flex:1; }
+  .card-hint { font-size:10px; color:#999; text-align:center; margin-top:6px; }
+  .card-back .card-hint { color:#d9b3c0; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 2.3 — "Caminhos turvos"</h1>
+  <p>Flashcards · 3ª Fase · Visão, Refração e Transtornos da Visão</p>
+</header>
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="controls" id="filterControls"></div>
+<div class="deck" id="deck"></div>
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 2.3.</footer>
+
+<script>
+const cards = [
+  {cat:"Fotorreceptores", front:"Quais as quatro regiões de um fotorreceptor?", back:"Segmento externo (pilha de discos membranosos com fotopigmentos), segmento interno, corpo celular e terminal sináptico. A transdução ocorre no segmento externo."},
+  {cat:"Fotorreceptores", front:"Diferencie bastonetes e cones quanto à sensibilidade, cor e localização.", back:"Bastonetes: mais de mil vezes mais sensíveis, visão escotópica (noturna), sem cor, ~92 milhões, ausentes na fóvea. Cones: visão fotópica (diurna) e de cores, ~5 milhões, concentrados na fóvea (maior acuidade)."},
+  {cat:"Fotorreceptores", front:"O que são condições fotópicas, escotópicas e mesópicas?", back:"Fotópicas: luz diurna, atuam os cones. Escotópicas: escuro, atuam só os bastonetes. Mesópicas: níveis intermediários, atuam ambos."},
+  {cat:"Fotorreceptores", front:"Quais os três tipos de cones e seus picos de sensibilidade?", back:"Cones para comprimentos de onda curtos ('azul', ~430 nm), médios ('verde', ~530 nm) e longos ('vermelho', ~560 nm). A cor percebida depende das contribuições relativas dos três."},
+  {cat:"Fototransdução", front:"O que é a corrente do escuro?", back:"No escuro, o influxo constante de Na+ por canais mantidos abertos pelo GMPc mantém o fotorreceptor despolarizado (~−30 mV). O GMPc é produzido pela guanilato-ciclase."},
+  {cat:"Fototransdução", front:"Quais são os 5 passos da fototransdução nos bastonetes?", back:"(1) A luz ativa a rodopsina (desbotamento); (2) ativa a proteína G transducina; (3) que ativa a fosfodiesterase (PDE); (4) a PDE hidrolisa o GMPc; (5) os canais de Na+ fecham e a membrana hiperpolariza."},
+  {cat:"Fototransdução", front:"O que compõe a rodopsina?", back:"Opsina (proteína receptora com 7 alfa-hélices transmembrana, acoplada à proteína G) + retinal (agonista pré-ligado, derivado da vitamina A). A luz altera a conformação do retinal, ativando a opsina."},
+  {cat:"Fototransdução", front:"Como os fotorreceptores respondem à luz?", back:"São HIPERPOLARIZADOS pela luz (a luz reduz o GMPc, fechando canais de Na+ e tornando a membrana mais negativa). A cascata gera grande amplificação do sinal (detecta até fótons individuais)."},
+  {cat:"Vias Visuais", front:"Qual a sequência de neurônios da retina até o nervo óptico?", back:"Fotorreceptores → neurônios bipolares → células ganglionares (cujos axônios formam o nervo óptico). Apenas as células ganglionares disparam potenciais de ação."},
+  {cat:"Vias Visuais", front:"Por que há maior acuidade visual na fóvea?", back:"A convergência é mínima na fóvea (relação ~1:1 entre fotorreceptores e células ganglionares); na periferia muitos fotorreceptores convergem para uma ganglionar, reduzindo a acuidade."},
+  {cat:"Vias Visuais", front:"O que é a organização centro-periferia dos campos receptivos das ganglionares?", back:"Campos circulares divididos em centro e periferia (on/off). A célula usa o contraste entre centro e periferia (não a intensidade absoluta) para reconhecer objetos — melhora a detecção de estímulos fracos."},
+  {cat:"Vias Visuais", front:"Descreva a via visual do nervo óptico ao córtex.", back:"Nervo óptico → quiasma óptico (fibras nasais cruzam) → trato óptico → corpo geniculado lateral (CGL) do tálamo → córtex visual do lobo occipital. Colaterais vão ao mesencéfalo (controle pupilar, NC III)."},
+  {cat:"Vias Visuais", front:"O que acontece no quiasma óptico?", back:"As fibras nasais de cada olho cruzam para o lado oposto (as temporais seguem ipsilaterais). Assim, o hemicampo direito é processado no hemisfério esquerdo e vice-versa."},
+  {cat:"Vias Visuais", front:"O que é a zona binocular e sua importância?", back:"É a região central onde os campos visuais dos dois olhos se sobrepõem. O cérebro integra as duas visões ligeiramente diferentes para criar percepção de profundidade (estereopsia). A zona monocular é vista em 2D."},
+  {cat:"Refração", front:"Como se corrigem hipermetropia e miopia?", back:"Hipermetropia (imagem atrás da retina, bulbo curto): lente convexa/positiva. Miopia (imagem antes da retina, bulbo alongado): lente côncava/negativa."},
+  {cat:"Refração", front:"O que causa e como se corrige o astigmatismo?", back:"Curvatura irregular da córnea ou cristalino, com vários focos em eixos diferentes (visão desfocada de longe e perto). Corrige-se com lente cilíndrica."},
+  {cat:"Refração", front:"O que é a presbiopia e por que não é erro de refração?", back:"É a perda do poder acomodativo relacionada à idade (~40 anos), com dificuldade para perto. Não é erro refrativo porque decorre da perda de acomodação, não de alteração do foco por forma do olho."},
+  {cat:"Catarata", front:"O que é catarata e qual o tratamento de escolha?", back:"Opacidade do cristalino. Tratamento de escolha: substituição do cristalino por lente artificial implantada. A catarata senil é a mais frequente (51% da cegueira mundial)."},
+  {cat:"Catarata", front:"Cite fatores de risco e causas metabólicas de catarata.", back:"Fatores de risco: diabetes, radiação solar, tabagismo, síndrome metabólica, alcoolismo, corticoide, HAS. Causas metabólicas: DM, galactosemia, doença de Wilson, hipocalcemia."},
+  {cat:"Glaucoma", front:"O que é glaucoma e qual sua importância epidemiológica?", back:"Neuropatia óptica com perda progressiva dos axônios das células ganglionares. É a primeira causa de cegueira IRREVERSÍVEL do mundo. Manifesta-se com perda de campo visual e evolui para cegueira se não tratado."},
+  {cat:"Glaucoma", front:"Qual a PIO normal e por que ela é apenas um fator de risco no glaucoma?", back:"PIO normal ~15 mmHg (12-20). Há glaucoma com PIO normal e PIO elevada sem glaucoma — a PIO é fator de risco, não a definição. Acima de 20-30 mmHg, os axônios das ganglionares são comprimidos."},
+  {cat:"Glaucoma", front:"Como se acumula o humor aquoso na hipertensão ocular?", back:"O humor aquoso (secretado pelo epitélio ciliar) normalmente drena pelo seio venoso da esclera (canal de Schlemm). Se o fluxo é bloqueado, ele se acumula e eleva a PIO. Tratamento: colírios que reduzem produção/aumentam absorção; cirurgia se falha."},
+  {cat:"Perda Visual", front:"Diferencie perda visual aguda transitória e persistente.", back:"Transitória: até 24 h (oclusão vascular temporária, pós-enxaqueca, AVC). Persistente: >24 h (distúrbios dos meios ópticos, retina ou vias ópticas). A perda aguda é urgência oftalmológica."},
+  {cat:"Vias Não Visuais", front:"O que são as ipRGCs e qual pigmento expressam?", back:"Células ganglionares da retina intrinsecamente fotossensíveis, que expressam melanopsina (opsina tipo Gq, pico ~480 nm, luz azul). Respondem à luz de forma autônoma, sem depender dos fotorreceptores clássicos."},
+  {cat:"Vias Não Visuais", front:"Descreva a via retino-hipotalâmica e sua função.", back:"Retina (ipRGCs M1) → trato retino-hipotalâmico (glutamatérgico) → núcleo supraquiasmático (NSQ), o marcapasso circadiano central. A luz adianta ou atrasa o relógio via expressão de Per."},
+  {cat:"Vias Não Visuais", front:"Descreva a via do reflexo pupilar à luz.", back:"Retina → nervo óptico → quiasma → trato óptico → núcleo pré-tectal olivar (NPO, bilateral) → núcleos de Edinger-Westphal de ambos os lados (via comissura posterior). A projeção bilateral explica os reflexos direto e consensual."},
+  {cat:"Vias Não Visuais", front:"Qual a origem das fibras parassimpáticas e simpáticas do olho?", back:"Parassimpáticas: núcleo de Edinger-Westphal → NC III → gânglio ciliar → músculo ciliar (acomodação) e esfíncter da íris (miose). Simpáticas: coluna intermediolateral → gânglio cervical superior → plexo carotídeo → olho (midríase)."},
+  {cat:"Vias Não Visuais", front:"O que é a pupila de Argyll Robertson?", back:"Pupila que não apresenta reflexo normal à luz, mas mantém a acomodação. É importante sinal de doença do SNC, como a neurossífilis."},
+  {cat:"Retinopatia Diabética", front:"Qual a primeira lesão visível da retinopatia diabética e sua causa?", back:"Os microaneurismas, consequência da perda dos pericitos perivasculares. Surgem cerca de 3 anos após o diagnóstico. A RD é uma microangiopatia progressiva."},
+  {cat:"Retinopatia Diabética", front:"Diferencie exsudatos duros e exsudatos algodonosos (moles).", back:"Exsudatos duros: depósitos de lipídios extravasados (amarelos, forma definida). Exsudatos algodonosos/moles: infartos da camada de fibras nervosas (por isquemia)."},
+  {cat:"Retinopatia Diabética", front:"O que caracteriza a forma proliferativa da RD e qual fator a impulsiona?", back:"A neovascularização (crescimento de vasos frágeis a partir do disco óptico ou da retina), impulsionada por fatores angiogênicos, especialmente o VEGF, liberados na isquemia. Os neovasos sangram no vítreo e podem causar descolamento tracional."},
+  {cat:"Retinopatia Diabética", front:"Como se classifica a RD quanto à neovascularização?", back:"Não proliferativa (RDNP: leve, moderada, grave, muito grave — sem neovasos) e proliferativa (RDP: qualquer neovaso; RDP de alto risco). A regra '4-2-1' define a RDNP grave."},
+  {cat:"Retinopatia Diabética", front:"Qual a base do tratamento da retinopatia diabética?", back:"Controle glicêmico rigoroso + controle de HAS e dislipidemia. Ocular: laserterapia (fotocoagulação focal ou panretiniana) e farmacoterapia intravítrea (corticoides ou anti-VEGF)."},
+  {cat:"Exames", front:"O que avalia a campimetria (perimetria) e onde é essencial?", back:"Mapeia a sensibilidade do campo visual. Essencial no glaucoma (padrão dos ensaios clínicos — SAP), retinopatias (perda funcional precoce) e lesões neurológicas."},
+  {cat:"Exames", front:"O que é a tonometria e qual seu padrão-ouro?", back:"Estima a pressão intraocular (normal ~15 mmHg). Padrão-ouro: tonometria de aplanação de Goldmann (GAT). A espessura corneana central afeta a leitura (córnea espessa → PIO falsamente alta)."},
+  {cat:"Exames", front:"Para que serve a OCT (tomografia de coerência óptica)?", back:"Imagem transversal não invasiva de alta resolução da retina e nervo óptico. Padrão-ouro para fluido intra/sub-retiniano e edema macular; avalia RNFL/células ganglionares no glaucoma; a OCT-A mapeia a vasculatura sem contraste."},
+  {cat:"Doenças Sistêmicas", front:"Por que o olho é uma 'janela' para doenças sistêmicas?", back:"Permite visualizar diretamente estruturas microvasculares e neurológicas, revelando doenças (diabetes, HAS, autoimunes) antes de sintomas. Muitos pacientes são assintomáticos (63% não sabiam ter doença ocular)."},
+  {cat:"Doenças Sistêmicas", front:"Quais os achados da retinopatia hipertensiva por gravidade?", back:"Leve: estreitamento arteriolar, 'fio de cobre/prata', cruzamentos AV. Moderada: hemorragias, manchas algodonosas, exsudatos, microaneurismas. Grave: papiledema (hipertensão maligna). A moderada associa-se a risco 2-4× maior de AVC."},
+  {cat:"Doenças Sistêmicas", front:"Cite manifestações oculares de doenças autoimunes.", back:"Artrite reumatoide (olho seco, episclerite, esclerite), LES (olho seco, vasculite retiniana, neurite óptica), Sjögren (olho seco em 89%), sarcoidose (uveíte), espondiloartropatias (uveíte anterior aguda)."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeCat = cat; renderFilters(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+renderFilters();
+render();
+</script>
+</body>
+</html>
