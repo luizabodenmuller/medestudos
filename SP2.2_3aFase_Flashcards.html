@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 2.2 - Flashcards</title>
+<style>
+  :root { --primary:#7a1f3d; --primary-light:#9c3355; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .controls { max-width:900px; margin:0 auto 18px auto; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .filter-btn { background:#fff; border:1px solid #e6c9d3; color:var(--primary); padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { background:#f7ecf0; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .progress-wrap { max-width:900px; margin:0 auto 20px auto; text-align:center; font-size:13px; color:#444; }
+  .progress-bar { width:100%; max-width:400px; margin:6px auto 0 auto; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .2s; }
+  .deck { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card-outer { perspective:1200px; height:250px; }
+  .card-outer.hidden { display:none; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card-outer.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; padding:16px; display:flex; flex-direction:column; box-shadow:0 2px 6px rgba(0,0,0,0.12); overflow:auto; }
+  .card-front { background:#fff; border-top:5px solid var(--primary); }
+  .card-back { background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-light); margin-bottom:8px; font-weight:bold; }
+  .card-back .card-cat { color:#eeccd7; }
+  .card-text { font-size:12.5px; line-height:1.4; flex:1; }
+  .card-hint { font-size:10px; color:#999; text-align:center; margin-top:6px; }
+  .card-back .card-hint { color:#d9b3c0; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 2.2 — "Então meu ouvido não serve só para ouvir..."</h1>
+  <p>Flashcards · 3ª Fase · Audição, Equilíbrio e Perda Auditiva</p>
+</header>
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="controls" id="filterControls"></div>
+<div class="deck" id="deck"></div>
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 2.2.</footer>
+
+<script>
+const cards = [
+  {cat:"Anatomia da Audição", front:"Quais são as duas partes do ouvido externo e o que forma o cerume?", back:"A aurícula (orelha) e o meato acústico externo. O cerume é formado pelas secreções das glândulas do meato somadas às células mortas da pele; lubrifica e impede a entrada de partículas."},
+  {cat:"Anatomia da Audição", front:"Quais estruturas compõem o ouvido médio?", back:"Ossículos (martelo, bigorna, estribo), músculos tensor do tímpano e estapédio (protetores), nervo corda do tímpano (ramo do NC VII) e plexo timpânico. A tuba auditiva conecta à nasofaringe e iguala a pressão."},
+  {cat:"Anatomia da Audição", front:"Qual a função dos músculos tensor do tímpano e estapédio?", back:"Função protetora: evitam vibrações excessivas dos ossículos em resposta a sons altos."},
+  {cat:"Anatomia da Audição", front:"O que compõe o labirinto ósseo e o membranáceo?", back:"Ósseo: cóclea, vestíbulo e três canais semicirculares (com perilinfa). Membranáceo: ducto coclear, utrículo, sáculo e ductos semicirculares (com endolinfa)."},
+  {cat:"Anatomia da Audição", front:"Diferencie endolinfa e perilinfa.", back:"Endolinfa preenche o labirinto membranáceo (alta em K+, semelhante ao líquido intracelular). Perilinfa preenche o espaço entre o membranáceo e o ósseo (semelhante ao líquido extracelular)."},
+  {cat:"Fisiologia da Audição", front:"Descreva a sequência de transmissão do som até a cóclea.", back:"Onda sonora vibra a membrana timpânica → ossículos → base do estribo vibra na janela do vestíbulo → ondas de pressão na perilinfa deslocam a lâmina basilar → curvam as células ciliadas do órgão espiral → PA no nervo coclear."},
+  {cat:"Fisiologia da Audição", front:"Como a cóclea discrimina frequências (tonotopia)?", back:"Sons agudos (ondas curtas) deslocam a lâmina basilar perto da janela do vestíbulo (base); sons graves (ondas longas) deslocam mais perto do helicotrema, no ápice da cóclea."},
+  {cat:"Fisiologia da Audição", front:"Como ocorre a transdução na célula ciliada?", back:"A inclinação dos estereocílios tensiona os ligamentos apicais e abre canais mecanossensíveis → influxo de K+ da endolinfa → despolarização → abre canais de Ca2+ → liberação de glutamato → ativa os axônios do gânglio espiral."},
+  {cat:"Fisiologia da Audição", front:"Por que a abertura de canais de K+ DESPOLARIZA a célula ciliada (ao contrário dos neurônios)?", back:"Pela altíssima concentração de K+ na endolinfa (potencial de equilíbrio do K+ ≈ 0 mV) somada ao potencial endococlear de +80 mV, criando um gradiente de ~125 mV que impulsiona o K+ para dentro da célula."},
+  {cat:"Sistema Vestibular", front:"Quais são os cinco órgãos vestibulares periféricos e o que detectam?", back:"Os três canais semicirculares detectam aceleração angular (rotação); o utrículo e o sáculo detectam aceleração linear e a gravidade."},
+  {cat:"Sistema Vestibular", front:"O que são as otocônias (otólitos) e onde ficam?", back:"Cristais de carbonato de cálcio (1-5 μm), mais densos que a endolinfa, incrustados na cobertura gelatinosa das máculas do sáculo e do utrículo. Sua inércia inclina os estereocílios na aceleração linear."},
+  {cat:"Sistema Vestibular", front:"Qual o papel do cinocílio na célula ciliada vestibular?", back:"É o cílio mais longo que define a direção preferencial: inclinação dos estereocílios em direção ao cinocílio despolariza (excita); no sentido oposto hiperpolariza (inibe)."},
+  {cat:"Sistema Vestibular", front:"O que há de único nos neurônios sensoriais vestibulares?", back:"São os únicos neurônios sensoriais primários com acesso direto ao cerebelo, pelo papel do sistema vestibular no controle dos movimentos dos olhos, membros e tronco."},
+  {cat:"Sistema Vestibular", front:"Quais as quatro funções essenciais do sistema vestibular?", back:"(1) Percepção (orientação corporal); (2) regulação da pressão arterial; (3) controle descendente dos músculos proximais/axiais (trato vestibulospinal); (4) controle do movimento dos olhos."},
+  {cat:"Sistema Vestibular", front:"Qual o mecanismo da VPPB (vertigem posicional paroxística benigna)?", back:"Cristais de cálcio se movem livremente nos canais semicirculares; a mudança de posição da cabeça faz esses cristais estimularem de forma aberrante as células ciliadas, provocando vertigem."},
+  {cat:"Causas de Perda", front:"Qual a causa mais frequente de perda sensorioneural gradual?", back:"A presbiacusia (perda associada ao envelhecimento, na orelha interna), com diminuição progressiva para sons agudos (acima de 1 kHz); agravada por diabetes, alcoolismo e alterações metabólicas."},
+  {cat:"Causas de Perda", front:"Cite causas de perda condutiva por alteração da orelha externa.", back:"Agenesia do meato, síndrome de Treacher Collins, estenoses, exostoses/osteomas, cerume impactado, canal colabado (idosos), otite externa difusa e corpos estranhos/tumores."},
+  {cat:"Causas de Perda", front:"Como se remove o cerume impactado e o que NÃO fazer?", back:"Irrigação da orelha com água ou soro fisiológico morno (ou aspiração delicada). Evitar estiletes/cotonetes, que empurram o cerume e podem ferir o canal."},
+  {cat:"Causas de Perda", front:"Que causa deve sempre ser afastada numa disacusia sensorioneural unilateral?", back:"O schwannoma vestibular (neurinoma do acústico) — representa ~10% das perdas sensorioneurais súbitas e pode ter crescimento grave. RM e audiometria de tronco encefálico são os exames-chave."},
+  {cat:"Causas de Perda", front:"Cite drogas ototóxicas.", back:"Aminoglicosídeos (estreptomicina, neomicina, kanamicina, tobramicina), diuréticos (ácido etacrínico, furosemida), salicilatos, quinino, mostarda nitrogenada e metais pesados."},
+  {cat:"PAIR", front:"O que é a PAIR e como difere do trauma acústico?", back:"Perda auditiva induzida por ruído: diminuição progressiva da acuidade por exposição continuada a elevados níveis sonoros (doença profissional irreversível mais prevalente do mundo). O trauma acústico é agudo, por um som abrupto e intenso."},
+  {cat:"PAIR", front:"Qual a fisiopatologia da PAIR e a faixa de frequência inicial?", back:"Comprometimento metabólico do epitélio sensorial coclear, sobretudo das células ciliadas externas (CCE) e estrutura neural, iniciando na região das frequências de 3 a 6 kHz."},
+  {cat:"PAIR", front:"Diferencie TTS e PTS.", back:"TTS (temporary threshold shift): perda temporária, reversível em dias. PTS (permanent threshold shift): irreversível — perda de CCE, degeneração de fibras nervosas e zonas mortas no órgão de Corti. TTS repetido pode evoluir para PTS."},
+  {cat:"PAIR", front:"Qual o limite de exposição a ruído da NR-15 e como varia?", back:"Risco significativo acima de 85 dB por 8 h/dia. Quanto maior a intensidade, menor o tempo permitido (ex.: 90 dB → 4 h; 100 dB → 1 h; 105 dB → 30 min)."},
+  {cat:"PAIR", front:"Qual o primeiro sinal audiométrico característico da PAIR?", back:"A 'gota acústica': comprometimento dos limiares em 3.000, 4.000 ou 6.000 Hz (mais acentuado em 4 kHz), com recuperação em 8.000 Hz."},
+  {cat:"PAIR", front:"Como se trata a PAIR?", back:"Não há tratamento clínico ou cirúrgico (é irreversível). Faz-se reabilitação com aparelho de amplificação sonora individual (AASI) quando indicado. A chave é a prevenção (Programas de Conservação Auditiva)."},
+  {cat:"Tipos de Perda", front:"Como diferenciar perda condutiva de sensorioneural pelos diapasões?", back:"Condutiva: Rinne negativo, Weber lateraliza para o lado PIOR, Schwabach prolongado, gap aéreo-ósseo. Sensorioneural: Rinne positivo, Weber para o lado MELHOR, Schwabach encurtado, sem gap."},
+  {cat:"Tipos de Perda", front:"Quais os critérios de certeza de uma hipoacusia condutiva?", back:"Via aérea pior que a óssea; gap aéreo-ósseo >15 dB; via óssea normal; discriminação de 100%; e gap nunca maior que 60 dB."},
+  {cat:"Tipos de Perda", front:"O que distingue uma lesão sensorial de uma neural?", back:"Na sensorial há recrutamento (SISI ~100%, reflexos recrutantes) e a discriminação é proporcional à perda. Na neural, a discriminação é desproporcionalmente pior, com tone decay/fadiga acentuado (>30 dB) e sem recrutamento (típico do schwannoma)."},
+  {cat:"Tipos de Perda", front:"O que caracteriza a perda auditiva central?", back:"Lesão entre os núcleos auditivos do tronco e o córtex: limiares tonais normais, discriminação muito ruim, EOA normais e ausência de resposta no PEATE, com comprometimentos neurológicos."},
+  {cat:"Tipos de Perda", front:"Qual o tratamento da perda neurossensorial grave?", back:"Aparelho de amplificação sonora individual (AASI) e, nas perdas graves, o implante coclear, que converte ondas sonoras em sinais elétricos que estimulam o nervo vestibulococlear (NC VIII)."},
+  {cat:"Avaliação Clínica", front:"Interprete o teste de Weber.", back:"Diapasão na linha média da fronte. Central = audição normal ou perda simétrica. Lateraliza para o lado PIOR = perda condutiva. Lateraliza para o lado MELHOR = perda sensorioneural."},
+  {cat:"Avaliação Clínica", front:"Interprete o teste de Rinne.", back:"Compara via aérea e via óssea. Positivo (aérea > óssea) = audição normal ou perda sensorioneural. Negativo (óssea > aérea) = perda condutiva ou mista."},
+  {cat:"Avaliação Clínica", front:"Qual o exame mais usado para avaliar a função auditiva?", back:"A audiometria tonal liminar: determina o limiar (menor intensidade audível em 50% das apresentações) por via aérea e óssea, definindo o tipo e o grau da perda."},
+  {cat:"Avaliação Clínica", front:"O que avaliam as emissões otoacústicas (EOA) e qual sua principal aplicação?", back:"Avaliam a função das células ciliadas externas (não quantificam a audição). Principal aplicação: triagem auditiva neonatal ('teste da orelhinha'), obrigatória no Brasil desde a Lei nº 12.303/2010."},
+  {cat:"Psicossocial/Ocupacional", front:"Qual a magnitude da associação entre perda auditiva e depressão?", back:"Perda bilateral: 2,05× mais chance de depressão maior e 2,68× de distimia. Entre idosos da comunidade, depressão em 69% dos com deficiência auditiva vs. 31% dos sem. A relação é bidirecional."},
+  {cat:"Psicossocial/Ocupacional", front:"Como a intervenção auditiva pode mitigar as consequências psicossociais?", back:"O uso de aparelhos auditivos reduz o sofrimento psicológico; o estudo ACHIEVE demonstrou efeitos protetores estatisticamente significativos sobre a conectividade social ao longo de três anos."},
+  {cat:"Psicossocial/Ocupacional", front:"Quais os programas obrigatórios de saúde ocupacional no Brasil (desde 1995)?", back:"PCMSO (Programa de Controle Médico de Saúde Ocupacional) e PPRA (Programa de Prevenção de Riscos Ambientais). Desde 2010 há também o Fator de Prevenção de Acidentes (FAP), que ajusta a carga tributária conforme acidentes/doenças."},
+  {cat:"Psicossocial/Ocupacional", front:"Diferencie causação médica e causação legal nas doenças ocupacionais.", back:"Causação médica: determinada por critérios científicos (associação causal entre a doença e fatores de risco). Causação legal: determinada por critérios jurídicos, que variam entre jurisdições; as presunções costumam inverter o ônus da prova em favor do trabalhador."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeCat = cat; renderFilters(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+renderFilters();
+render();
+</script>
+</body>
+</html>

@@ -93,7 +93,7 @@
 <body>
 <div class="wrap">
   <h1>📚 Painel de Estudos — PBL</h1>
-  <div class="subtitle">Resumos, flashcards, Anki e quizzes de todas as SPs, organizados por fase</div>
+  <div class="subtitle">Resumos, flashcards e quizzes de todas as SPs, organizados por fase</div>
 
   <input type="text" class="search" id="searchBox" placeholder="🔎 Buscar por número da SP, título, palavra-chave ou disciplina...">
   <div class="chips" id="chips"></div>
@@ -130,17 +130,6 @@ const DATA = [
   {
     fase: "2ª Fase",
     sps: [
-      {
-        num: "SP 2.1",
-        titulo: "Sem vontade de comer nada...",
-        disciplina: "Fisiologia",
-        data: "4 mar 2026",
-        keywords: "Bioeletrogênese, potencial de membrana, potencial de ação, gustação, olfação, paladar, sabor, papilas, calículos gustatórios, nervos cranianos, epitélio olfatório, integração sensorial, córtex orbitofrontal, anosmia, disgeusia, língua, nariz",
-        resumo: "SP2.1_2aFase_Resumo.pdf",
-        flashcards: "SP2.1_2aFase_Flashcards.html",
-        anki: "SP2.1_2aFase_Anki.txt",
-        quiz: "SP2.1_2aFase_Quiz.html"
-      },
       {
         num: "SP 3.2",
         titulo: "O Retorno de Paulo",
@@ -223,6 +212,28 @@ const DATA = [
         flashcards: "SP1.4_3aFase_Flashcards.html",
         anki: "SP1.4_3aFase_Anki.txt",
         quiz: "SP1.4_3aFase_Quiz.html"
+      },
+      {
+        num: "SP 2.1",
+        titulo: "Sem vontade de comer nada...",
+        disciplina: "Fisiologia Sensorial",
+        data: "4 mar 2026",
+        keywords: "Bioeletrogênese, potencial de membrana, potencial de ação, gustação, olfação, paladar, sabor, papilas, calículos gustatórios, nervos cranianos, epitélio olfatório, integração sensorial, córtex orbitofrontal, anosmia, disgeusia, língua, nariz",
+        resumo: "SP2.1_3aFase_Resumo.pdf",
+        flashcards: "SP2.1_3aFase_Flashcards.html",
+        anki: "SP2.1_3aFase_Anki.txt",
+        quiz: "SP2.1_3aFase_Quiz.html"
+      },
+      {
+        num: "SP 2.2",
+        titulo: "Então meu ouvido não serve só para ouvir...",
+        disciplina: "Fisiologia Sensorial",
+        data: "1 abr 2026",
+        keywords: "Audição, equilíbrio postural, sistema vestibular, cóclea, células ciliadas, ossículos, labirinto, endolinfa, perilinfa, VPPB, vertigem, perda auditiva, condutiva, neurossensorial, PAIR, ruído ocupacional, presbiacusia, audiometria, diapasões, Weber, Rinne, emissões otoacústicas, doenças profissionais, NR-15",
+        resumo: "SP2.2_3aFase_Resumo.pdf",
+        flashcards: "SP2.2_3aFase_Flashcards.html",
+        anki: "SP2.2_3aFase_Anki.txt",
+        quiz: "SP2.2_3aFase_Quiz.html"
       }
       // Acrescente as próximas SPs da 3ª Fase aqui.
     ]
@@ -312,7 +323,6 @@ function render(){
         <div class="links">
           ${linkOrDisabled(sp.resumo, 'Resumo', '📄')}
           ${linkOrDisabled(sp.flashcards, 'Flashcards', '🃏')}
-          ${linkOrDisabled(sp.anki, 'Anki', '🎴')}
           ${linkOrDisabled(sp.quiz, 'Quiz', '📝')}
         </div>
       `;

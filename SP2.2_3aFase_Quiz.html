@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 2.2 - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 2.2 — "Então meu ouvido não serve só para ouvir..."</h1>
+  <p>Quiz · 3ª Fase · Audição, Equilíbrio e Perda Auditiva</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 2.2.</footer>
+
+<script>
+const questions = [
+  {
+    q: "Quais são os três ossículos do ouvido médio?",
+    options: ["Martelo, bigorna e estribo", "Martelo, estribo e cóclea", "Bigorna, vestíbulo e sáculo", "Estribo, utrículo e helicotrema"],
+    correct: 0,
+    explain: "Os ossículos da audição são o martelo, a bigorna e o estribo, que formam uma cadeia móvel da membrana timpânica até a janela do vestíbulo."
+  },
+  {
+    q: "Qual a função da tuba auditiva?",
+    options: ["Transduzir o som em impulso nervoso", "Conectar a orelha média à nasofaringe e igualar a pressão à atmosférica", "Produzir a endolinfa", "Amortecer os sons graves"],
+    correct: 1,
+    explain: "A tuba auditiva conecta a orelha média à nasofaringe e permite que a pressão na cavidade timpânica se iguale à pressão atmosférica."
+  },
+  {
+    q: "Qual líquido preenche o labirinto membranáceo e tem alta concentração de potássio?",
+    options: ["Perilinfa", "Endolinfa", "Líquor", "Linfa"],
+    correct: 1,
+    explain: "O labirinto membranáceo é preenchido pela endolinfa, um líquido com alta concentração de K+ e baixa de Na+, semelhante ao líquido intracelular. O espaço com o labirinto ósseo contém perilinfa."
+  },
+  {
+    q: "Na cóclea, onde os sons GRAVES (baixa frequência) deslocam mais a lâmina basilar?",
+    options: ["Perto da janela do vestíbulo (base)", "Perto do helicotrema (ápice)", "Na membrana timpânica", "No vestíbulo"],
+    correct: 1,
+    explain: "Ondas mais longas (graves) causam deslocamento mais distante, perto do helicotrema, no ápice da cóclea. Ondas curtas (agudas) deslocam perto da janela do vestíbulo (base) — organização tonotópica."
+  },
+  {
+    q: "Na transdução da célula ciliada, a inclinação dos estereocílios abre canais que permitem o influxo de qual íon a partir da endolinfa?",
+    options: ["Sódio (Na+)", "Cálcio (Ca2+)", "Potássio (K+)", "Cloreto (Cl-)"],
+    correct: 2,
+    explain: "A inclinação dos estereocílios aumenta a tensão nos ligamentos apicais, abrindo os canais mecanossensíveis e permitindo o influxo de K+ da endolinfa, o que despolariza a célula ciliada."
+  },
+  {
+    q: "Quais órgãos vestibulares detectam a aceleração ANGULAR (rotação da cabeça)?",
+    options: ["O utrículo e o sáculo", "Os três canais semicirculares", "A cóclea e o ducto coclear", "As máculas otolíticas"],
+    correct: 1,
+    explain: "Os três canais (ductos) semicirculares sinalizam a aceleração angular; o utrículo e o sáculo (órgãos otolíticos) sinalizam a aceleração linear e a gravidade."
+  },
+  {
+    q: "O que são as otocônias (otólitos)?",
+    options: ["Cristais de carbonato de cálcio na cobertura gelatinosa das máculas", "Células ciliadas do órgão de Corti", "Fibras do nervo coclear", "Dobras da membrana basilar"],
+    correct: 0,
+    explain: "As otocônias são cristais de carbonato de cálcio (1-5 μm), mais densos que a endolinfa, incrustados na gelatina das máculas. Sua inércia inclina os estereocílios durante a aceleração linear."
+  },
+  {
+    q: "Qual o mecanismo da vertigem posicional paroxística benigna (VPPB) de Jucilei?",
+    options: ["Inflamação do nervo coclear", "Cristais de cálcio que se movem livremente nos canais semicirculares estimulando de forma aberrante as células ciliadas", "Ruptura da membrana timpânica", "Acúmulo de cerume no meato"],
+    correct: 1,
+    explain: "Na VPPB, os cristais de cálcio se movem livremente nos canais semicirculares; a mudança de posição da cabeça faz esses cristais estimularem de forma aberrante as células ciliadas, provocando vertigem."
+  },
+  {
+    q: "Qual é a causa mais frequente de deficiência auditiva sensorioneural de evolução gradual?",
+    options: ["Otite média", "Presbiacusia", "Cerume impactado", "Otosclerose"],
+    correct: 1,
+    explain: "A presbiacusia (perda associada ao envelhecimento, localizada na orelha interna) é talvez a causa mais frequente, com diminuição progressiva da audição para os sons agudos."
+  },
+  {
+    q: "Diante de uma disacusia sensorioneural UNILATERAL, qual diagnóstico deve ser sempre afastado?",
+    options: ["Presbiacusia", "Schwannoma vestibular (neurinoma do acústico)", "Cerume impactado", "Otite externa"],
+    correct: 1,
+    explain: "Em presença de disacusia unilateral, deve-se sempre afastar o schwannoma vestibular; a audiometria de tronco encefálico e a ressonância magnética são os exames mais importantes."
+  },
+  {
+    q: "A perda auditiva induzida por ruído (PAIR) inicia o comprometimento em qual faixa de frequência?",
+    options: ["125 a 250 Hz", "500 Hz a 1 kHz", "3 a 6 kHz", "10 a 12 kHz"],
+    correct: 2,
+    explain: "A PAIR resulta do comprometimento das células ciliadas externas, iniciando na região da cóclea responsável pelas frequências de 3 a 6 kHz (com a 'gota acústica' mais acentuada em 4 kHz)."
+  },
+  {
+    q: "Segundo a NR-15, qual a máxima exposição diária permissível para um ruído de 85 dB(A)?",
+    options: ["1 hora", "4 horas", "8 horas", "30 minutos"],
+    correct: 2,
+    explain: "A NR-15 estabelece 8 horas como máxima exposição diária permissível para 85 dB(A). Quanto maior a intensidade, menor o tempo permitido (ex.: 100 dB → 1 hora)."
+  },
+  {
+    q: "Qual é o primeiro sinal audiométrico característico da PAIR?",
+    options: ["Perda plana em todas as frequências", "A 'gota acústica' em 3.000-4.000-6.000 Hz com recuperação em 8.000 Hz", "Perda apenas nos sons graves", "Ausência de qualquer alteração"],
+    correct: 1,
+    explain: "O primeiro sinal é o aparecimento da 'gota acústica', com comprometimento dos limiares em 3.000, 4.000 ou 6.000 Hz, sendo restaurado em 8.000 Hz."
+  },
+  {
+    q: "Qual é o tratamento da PAIR?",
+    options: ["Cirurgia de estapedectomia", "Antibioticoterapia", "Não há tratamento clínico/cirúrgico — reabilitação com AASI e, principalmente, prevenção", "Corticoide sistêmico"],
+    correct: 2,
+    explain: "A PAIR é irreversível; não há tratamento clínico ou cirúrgico. Faz-se reabilitação com aparelho de amplificação sonora individual (AASI) quando indicado, mas a chave é a prevenção."
+  },
+  {
+    q: "No teste de Weber, se o som lateraliza para o lado em que o paciente escuta PIOR, isso indica:",
+    options: ["Perda sensorioneural nesse lado", "Perda condutiva nesse lado", "Audição normal", "Perda central"],
+    correct: 1,
+    explain: "Se o Weber lateraliza para o lado pior, a perda de audição nessa orelha é de condução. Se lateraliza para o lado melhor, é sensorioneural."
+  },
+  {
+    q: "Um teste de Rinne NEGATIVO (via óssea melhor que a aérea) é característico de qual tipo de perda?",
+    options: ["Sensorioneural", "Condutiva ou mista", "Central", "Funcional"],
+    correct: 1,
+    explain: "O Rinne negativo (o paciente escuta melhor pela via óssea que pela aérea) é característico de perdas auditivas de condução ou mistas. O Rinne positivo ocorre na audição normal ou sensorioneural."
+  },
+  {
+    q: "Qual exame é o mais frequentemente utilizado para avaliar a função auditiva?",
+    options: ["Emissões otoacústicas", "Audiometria tonal liminar", "Imitanciometria", "PEATE"],
+    correct: 1,
+    explain: "A audiometria tonal liminar é o teste mais frequentemente utilizado; determina, em cada frequência, o limiar por via aérea e óssea, definindo o tipo e o grau da deficiência auditiva."
+  },
+  {
+    q: "As emissões otoacústicas (EOA), base do 'teste da orelhinha', avaliam principalmente:",
+    options: ["O nervo vestibular", "As células ciliadas externas (CCE)", "A membrana timpânica", "Os núcleos do tronco encefálico"],
+    correct: 1,
+    explain: "As EOA testam a função das células ciliadas externas (não quantificam a audição). São a base da triagem auditiva neonatal, obrigatória no Brasil desde a Lei nº 12.303/2010."
+  },
+  {
+    q: "Segundo o material, a perda auditiva bilateral está associada a quantas vezes mais chance de transtorno depressivo maior?",
+    options: ["1,1 vezes", "2,05 vezes", "5,0 vezes", "Nenhuma associação"],
+    correct: 1,
+    explain: "Indivíduos com perda auditiva bilateral têm 2,05 vezes mais chances de diagnóstico de transtorno depressivo maior e 2,68 vezes mais chances de distimia, em relação bidirecional."
+  },
+  {
+    q: "Quais são os programas obrigatórios de saúde ocupacional no Brasil (desde 1995)?",
+    options: ["SUS e ESF", "PCMSO e PPRA", "PNI e PACS", "CAT e FAP"],
+    correct: 1,
+    explain: "Desde 1995 são obrigatórios o PCMSO (Programa de Controle Médico de Saúde Ocupacional) e o PPRA (Programa de Prevenção de Riscos Ambientais). Desde 2010 há também o Fator de Prevenção de Acidentes (FAP)."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>
