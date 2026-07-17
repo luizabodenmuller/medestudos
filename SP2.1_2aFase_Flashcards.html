@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 2.1 - Flashcards</title>
+<style>
+  :root { --primary:#7a1f3d; --primary-light:#9c3355; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:21px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .controls { max-width:900px; margin:0 auto 18px auto; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .filter-btn { background:#fff; border:1px solid #e6c9d3; color:var(--primary); padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { background:#f7ecf0; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .progress-wrap { max-width:900px; margin:0 auto 20px auto; text-align:center; font-size:13px; color:#444; }
+  .progress-bar { width:100%; max-width:400px; margin:6px auto 0 auto; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .2s; }
+  .deck { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card-outer { perspective:1200px; height:240px; }
+  .card-outer.hidden { display:none; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card-outer.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; padding:16px; display:flex; flex-direction:column; box-shadow:0 2px 6px rgba(0,0,0,0.12); overflow:auto; }
+  .card-front { background:#fff; border-top:5px solid var(--primary); }
+  .card-back { background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-light); margin-bottom:8px; font-weight:bold; }
+  .card-back .card-cat { color:#eeccd7; }
+  .card-text { font-size:13px; line-height:1.4; flex:1; }
+  .card-hint { font-size:10px; color:#999; text-align:center; margin-top:6px; }
+  .card-back .card-hint { color:#d9b3c0; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 2.1 — "Sem vontade de comer nada..."</h1>
+  <p>Flashcards · 2ª Fase · Bioeletrogênese, Gustação e Olfação</p>
+</header>
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="controls" id="filterControls"></div>
+<div class="deck" id="deck"></div>
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 2.1.</footer>
+
+<script>
+const cards = [
+  {cat:"Bioeletrogênese", front:"O que é o potencial de membrana (Vm)?", back:"O desequilíbrio elétrico entre o líquido extracelular (LEC) e o intracelular (LIC), resultante da distribuição desigual de íons. Em células nervosas/musculares em repouso fica entre −40 e −90 mV (interior negativo)."},
+  {cat:"Bioeletrogênese", front:"Por que o potencial de repouso é devido principalmente ao potássio?", back:"A maioria das células é ~40 vezes mais permeável ao K+ do que ao Na+, aproximando o Vm do potencial de equilíbrio do K+ (−90 mV) e não do Na+ (+60 mV)."},
+  {cat:"Bioeletrogênese", front:"Como a entrada de Ca2+/Na+ e de Cl- altera o Vm?", back:"A entrada de Ca2+ ou Na+ despolariza a célula (Vm mais positivo). A entrada de Cl- hiperpolariza (Vm mais negativo)."},
+  {cat:"Bioeletrogênese", front:"Por que a bomba Na+/K+-ATPase é eletrogênica?", back:"Transporta 3 Na+ para fora e 2 K+ para dentro por ciclo, exportando mais carga positiva do que importa (déficit interno de ~−4 mV). Também restaura os gradientes iônicos consumidos na atividade elétrica."},
+  {cat:"Bioeletrogênese", front:"Quais os tipos de canais iônicos por mecanismo de gating?", back:"Vazamento (leak, sempre abertos, K+, estabelecem o RMP); dependentes de voltagem (Nav, Kv, protagonistas do PA); dependentes de ligante (NMDA, nicotínico de ACh); mecanossensíveis (células ciliadas, barorreceptores)."},
+  {cat:"Bioeletrogênese", front:"Quais as fases do potencial de ação?", back:"Despolarização (abertura dos Nav, entrada de Na+, overshooting até +30/+40 mV); repolarização (inativação dos Nav + abertura dos Kv, saída de K+); hiperpolarização pós-disparo (undershoot); restauração pela Na+/K+-ATPase."},
+  {cat:"Bioeletrogênese", front:"O que é a lei do tudo ou nada?", back:"Abaixo do limiar o PA não ocorre; acima do limiar, sua amplitude é sempre máxima e independe da intensidade do estímulo. A intensidade é codificada pela frequência de disparos, não pela amplitude."},
+  {cat:"Bioeletrogênese", front:"Diferencie período refratário absoluto e relativo.", back:"Absoluto: nenhum estímulo (mesmo forte) deflagra novo PA (Nav inativados; ~1/2.500 s nas fibras mielínicas grandes). Relativo: é possível deflagrar PA, mas requer estímulo mais intenso que o normal."},
+  {cat:"Bioeletrogênese", front:"O que é condução saltatória e por que é importante?", back:"Nas fibras mielínicas, o PA salta de nódulo a nódulo de Ranvier (onde se concentram os Nav). Aumenta a velocidade de condução em 5-50× (até 120 m/s) e conserva energia."},
+  {cat:"Bioeletrogênese", front:"Como funciona o acoplamento excitação-contração no músculo esquelético?", back:"O PA nos túbulos T ativa os receptores de di-hidropiridina (DHPR, sensores de voltagem) que interagem mecanicamente com os RyR1 do retículo sarcoplasmático, liberando Ca2+ (de ~100 nM para ~10 μM) para a contração."},
+  {cat:"Gustação", front:"Quais são as cinco qualidades gustativas e seus estímulos?", back:"Doce e umami (moléculas orgânicas nutritivas; umami = glutamato); salgado (Na+); azedo/ácido (H+); amargo (aviso de toxicidade, reação de cuspir)."},
+  {cat:"Gustação", front:"O que são os botões/calículos gustatórios?", back:"Estruturas com 50-150 células receptoras gustatórias (CRGs) + células de sustentação e basais, agrupadas nas papilas linguais (~10 mil no jovem adulto). Cada célula gustativa vive ~10 dias."},
+  {cat:"Gustação", front:"Como os três tipos de células gustatórias transduzem os sabores?", back:"Tipo I (sustentação): possível salgado (Na+ por canais). Tipo II (receptoras): doce/amargo/umami via RCPG (T1R, T2R) → gustducina → liberação de ATP. Tipo III (pré-sinápticas): azedo (H+ → liberação de serotonina)."},
+  {cat:"Gustação", front:"Qual é a via gustativa completa até o córtex?", back:"NC VII (2/3 anteriores), IX (1/3 posterior) e X (epiglote/faringe) → núcleo do trato solitário (NTS) → VPM do tálamo → córtex gustativo primário (ínsula anterior + opérculo frontal) → córtex orbitofrontal."},
+  {cat:"Gustação", front:"Por que a queimadura de Ambrósio melhora com o tempo?", back:"Porque as células gustativas têm vida útil de cerca de 10 dias e são continuamente repostas pelas células basais — os receptores de sabor se recuperam relativamente rápido após uma queimadura."},
+  {cat:"Olfação", front:"Descreva a transdução olfatória.", back:"A molécula odorífera dissolve-se no muco e liga-se a um receptor acoplado à proteína G (Golf) → adenilciclase → aumento de AMPc → abertura de canais catiônicos (Na+ e Ca2+) → potencial receptor despolarizante → potencial de ação."},
+  {cat:"Olfação", front:"Quantos receptores olfatórios e tipos existem no nariz humano?", back:"Cerca de 10 milhões de receptores olfatórios, divididos em ~400 tipos funcionais diferentes. Há apenas um tipo de receptor por célula olfatória."},
+  {cat:"Olfação", front:"Qual a peculiaridade da via olfatória em relação ao tálamo?", back:"É a única via sensorial que projeta ao córtex (piriforme, lobo temporal) sem passar obrigatoriamente pelo tálamo, com conexões diretas ao sistema límbico (amígdala, hipocampo) — base do vínculo cheiro-emoção-memória (fenômeno de Proust)."},
+  {cat:"Olfação", front:"O que ocorre nos glomérulos do bulbo olfatório?", back:"Os axônios das células olfatórias atravessam a lâmina cribriforme e convergem, nos glomérulos, para as células mitrais (neurônios de segunda ordem). Cada glomérulo recebe apenas um tipo de célula olfatória."},
+  {cat:"Anatomia Língua/Nariz", front:"Quais são as partes da língua e o sulco terminal?", back:"Raiz (posterior, fixa), corpo (2/3 anteriores) e ápice. O sulco terminal em 'V' (aponta ao forame cego) separa a parte pré-sulcal (oral) da pós-sulcal (faríngea)."},
+  {cat:"Anatomia Língua/Nariz", front:"Quais papilas linguais contêm calículos gustatórios e qual não contém?", back:"Contêm: circunvaladas (100-300 cada), fungiformes (~5 cada) e folhadas. NÃO contêm: filiformes (têm receptores táteis e aumentam o atrito com o alimento)."},
+  {cat:"Anatomia Língua/Nariz", front:"Qual a inervação sensitiva especial (paladar) da língua?", back:"2/3 anteriores (exceto circunvaladas): corda do tímpano (NC VII). 1/3 posterior e papilas circunvaladas: glossofaríngeo (NC IX). Área anterior à epiglote: nervo laríngeo interno (ramo do vago, NC X). Motora: NC XII (hipoglosso)."},
+  {cat:"Anatomia Língua/Nariz", front:"Quais as funções do nariz?", back:"Olfação, respiração, filtração de poeira, umidificação do ar inspirado, e recepção/eliminação de secreções dos seios paranasais e ductos lacrimonasais."},
+  {cat:"Anatomia Língua/Nariz", front:"Como se divide funcionalmente a mucosa nasal?", back:"Os 2/3 inferiores são a área respiratória (aquece e umedece o ar) e o 1/3 superior é a área olfatória. O septo é formado por lâmina perpendicular do etmoide, vômer e cartilagem do septo."},
+  {cat:"Anatomia Língua/Nariz", front:"Quais os três tipos celulares do epitélio olfatório?", back:"Olfatórias (neurônios bipolares de 1ª ordem, com cílios olfatórios; vivem ~2 meses), de sustentação (suporte/nutrição/desintoxicação) e basais (células-tronco). As glândulas de Bowman produzem o muco que dissolve os odores."},
+  {cat:"Integração", front:"Qual estrutura é o sítio primário da integração gustativo-olfativa?", back:"O córtex orbitofrontal (COF), que recebe as vias gustativa (via tálamo/VPM) e olfativa (acesso direto, sem passar obrigatoriamente pelo tálamo) e possui neurônios bimodais."},
+  {cat:"Integração", front:"O que significa a integração no COF ser supraditiva/subditiva?", back:"É supraditiva (potencializada) para combinações sabor-odor congruentes e subditiva (inibitória) para incongruentes — base neural da correspondência sabor-alimento aprendida."},
+  {cat:"Integração", front:"Como os hormônios modulam a integração olfato-gustativa?", back:"Grelina (fome) aumenta a sensibilidade a odores alimentares e a palatabilidade; leptina (saciedade) reduz a resposta do COF ao sabor; GLP-1 e PYY (pós-refeição) reduzem a resposta dopaminérgica ao sabor."},
+  {cat:"Integração", front:"Qual o papel da amígdala e do hipocampo na percepção do sabor?", back:"A amígdala atribui a valência emocional (agradável/aversivo) e é crítica na aversão condicionada ao sabor. O hipocampo consolida a memória dos flavors e a associação alimento-contexto."},
+  {cat:"Alterações", front:"Defina anosmia, hiposmia, parosmia e fantosmia.", back:"Anosmia: perda total do olfato. Hiposmia: redução parcial. Parosmia: distorção de odores (cheiros familiares tornam-se desagradáveis). Fantosmia: percepção de odores inexistentes."},
+  {cat:"Alterações", front:"Defina ageusia, hipogeusia e disgeusia.", back:"Ageusia: perda total da gustação. Hipogeusia: redução. Disgeusia: distorção do paladar (ex.: disgeusia metálica por IECA)."},
+  {cat:"Alterações", front:"Qual o mecanismo dominante da anosmia na COVID-19?", back:"Não é a destruição direta dos neurônios olfativos, mas a infecção e disfunção das células sustentaculares do epitélio olfativo, gerando inflamação e desconexão funcional. Ocorre em 40-85% conforme a cepa."},
+  {cat:"Alterações", front:"Por que a hiposmia é um sinal precoce importante em doenças neurodegenerativas?", back:"Na doença de Parkinson a hiposmia está presente em 90% dos casos e pode anteceder o diagnóstico em 4-6 anos (potencial biomarcador). Na Alzheimer reflete degeneração precoce do córtex entorrinal e hipocampo."},
+  {cat:"Alterações", front:"Qual a principal causa das hiposmias/anosmias crônicas?", back:"Cerca de 2/3 são causadas por infecções respiratórias, trauma ou doenças nasais e paranasais. Medicamentos respondem por ~12% das disfunções olfatórias (muitas reversíveis)."},
+  {cat:"Alterações", front:"Quais os riscos e impactos nutricionais da perda de olfato?", back:"Monotonia alimentar, perda de apetite, compensação excessiva com sal/açúcar (perigosa em hipertensos/diabéticos), desnutrição (fragilidade no idoso), e riscos de segurança (não detectar gás, fumaça, alimentos estragados)."},
+  {cat:"Biopsicossocial", front:"Qual deficiência sensorial tem maior associação com depressão?", back:"A deficiência sensorial dupla (visual + auditiva), com aumento de 1,27 a 2,41 vezes no risco de depressão. A relação é bidirecional e dose-dependente."},
+  {cat:"Biopsicossocial", front:"Como a privação sensorial precoce afeta o neurodesenvolvimento?", back:"Compromete o desenvolvimento cognitivo, atrasa a linguagem e perturba o funcionamento social, com poda sináptica acelerada, menor mielinização e alterações dendríticas no hipocampo."},
+  {cat:"Biopsicossocial", front:"Qual a relação entre deficiências sensoriais e demência?", back:"As deficiências sensoriais (sobretudo a dupla) associam-se a maior incidência de demência e declínio cognitivo acelerado; a remissão da perda auditiva reduz o risco, especialmente antes dos 65 anos."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeCat = cat; renderFilters(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+renderFilters();
+render();
+</script>
+</body>
+</html>

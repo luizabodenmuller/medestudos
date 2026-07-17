@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 2.1 - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:21px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 2.1 — "Sem vontade de comer nada..."</h1>
+  <p>Quiz · 2ª Fase · Bioeletrogênese, Gustação e Olfação</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 2.1.</footer>
+
+<script>
+const questions = [
+  {
+    q: "O potencial de repouso da membrana neuronal é devido principalmente a qual íon?",
+    options: ["Sódio (Na+)", "Potássio (K+)", "Cálcio (Ca2+)", "Cloreto (Cl-)"],
+    correct: 1,
+    explain: "A maioria das células é ~40 vezes mais permeável ao K+ do que ao Na+, de modo que o potencial de repouso fica mais próximo do potencial de equilíbrio do K+ (−90 mV)."
+  },
+  {
+    q: "Por que a bomba Na+/K+-ATPase é chamada de eletrogênica?",
+    options: ["Porque transporta íons em troca eletricamente neutra", "Porque bombeia 3 Na+ para fora e 2 K+ para dentro, gerando déficit de carga positiva interna", "Porque não consome ATP", "Porque só transporta cloreto"],
+    correct: 1,
+    explain: "A bomba transporta 3 Na+ para fora para cada 2 K+ para dentro, produzindo uma perda contínua de cargas positivas do lado interno (~−4 mV) — por isso é eletrogênica."
+  },
+  {
+    q: "Durante a fase de despolarização do potencial de ação, o que ocorre?",
+    options: ["Abertura dos canais de K+ e saída de K+", "Abertura maciça dos canais de Na+ dependentes de voltagem e entrada de Na+", "Fechamento de todos os canais iônicos", "Entrada de Cl-"],
+    correct: 1,
+    explain: "Na despolarização, a membrana torna-se subitamente permeável ao Na+ (abertura dos Nav), com entrada de Na+ que leva o Vm rapidamente na direção positiva (overshooting até +30/+40 mV)."
+  },
+  {
+    q: "O princípio do 'tudo ou nada' significa que:",
+    options: ["A amplitude do PA varia com a intensidade do estímulo", "Acima do limiar, a amplitude do PA é sempre máxima e independe da intensidade do estímulo", "O PA só ocorre em fibras amielínicas", "O PA nunca se propaga"],
+    correct: 1,
+    explain: "Abaixo do limiar o PA não ocorre; acima do limiar, sua amplitude é sempre máxima e independe da intensidade do estímulo. A intensidade é codificada pela frequência de disparos."
+  },
+  {
+    q: "A condução saltatória nas fibras mielínicas ocorre porque:",
+    options: ["A mielina conduz melhor os íons", "Os potenciais de ação saltam entre os nódulos de Ranvier, onde se concentram os canais de Na+", "Não há canais iônicos nas fibras mielínicas", "Os íons atravessam livremente a bainha de mielina"],
+    correct: 1,
+    explain: "A bainha de mielina isola o axônio, forçando os PAs a saltarem entre os nódulos de Ranvier (onde se concentram os Nav). Isso aumenta a velocidade (até 120 m/s) e reduz o custo metabólico."
+  },
+  {
+    q: "Quais são as cinco qualidades gustativas reconhecidas?",
+    options: ["Doce, salgado, azedo, amargo e picante", "Doce, salgado, azedo (ácido), amargo e umami", "Doce, salgado, ácido, metálico e umami", "Doce, amargo, umami, adstringente e salgado"],
+    correct: 1,
+    explain: "A gustação é uma combinação de cinco qualidades: doce, azedo (ácido), salgado, amargo e umami (associado ao glutamato)."
+  },
+  {
+    q: "O sabor amargo é reconhecido pelo corpo principalmente como:",
+    options: ["Sinal de alimento nutritivo", "Aviso da possível presença de componentes tóxicos", "Indicador de sais minerais", "Sinal de acidez"],
+    correct: 1,
+    explain: "O sabor amargo é reconhecido como aviso da possível presença de componentes tóxicos — por isso, para alguns sabores amargos, a reação natural é cuspir."
+  },
+  {
+    q: "Quais nervos cranianos conduzem a informação gustativa?",
+    options: ["NC V, VII e VIII", "NC VII, IX e X", "NC I, II e V", "NC IX, X e XII"],
+    correct: 1,
+    explain: "O nervo facial (VII) atende os 2/3 anteriores da língua, o glossofaríngeo (IX) o 1/3 posterior, e o vago (X) a epiglote e a garganta. Todos convergem para o núcleo do trato solitário."
+  },
+  {
+    q: "Por que os receptores gustativos de Ambrósio se recuperam relativamente rápido após a queimadura?",
+    options: ["Porque não foram realmente lesados", "Porque cada célula gustativa vive cerca de 10 dias e é continuamente reposta pelas células basais", "Porque a saliva regenera instantaneamente as células", "Porque os nervos cranianos se regeneram em horas"],
+    correct: 1,
+    explain: "Cada célula gustativa tem vida útil de cerca de 10 dias, sendo continuamente substituída — por isso os receptores de sabor não demoram muito para se recuperar de uma queimadura por algo muito quente."
+  },
+  {
+    q: "Na transdução olfatória, qual segundo mensageiro abre os canais catiônicos?",
+    options: ["IP3 (inositol trifosfato)", "AMPc (monofosfato de adenosina cíclico)", "Cálcio do retículo", "GMPc"],
+    correct: 1,
+    explain: "A molécula odorífera ativa a proteína Golf → adenilciclase → aumento de AMPc, que abre canais catiônicos permitindo a entrada de Na+ e Ca2+ e a formação do potencial receptor despolarizante."
+  },
+  {
+    q: "Qual característica é ÚNICA da via olfatória entre as vias sensoriais?",
+    options: ["Passa duas vezes pelo tálamo", "Projeta ao córtex sem passar obrigatoriamente pelo tálamo, com acesso direto ao sistema límbico", "Não gera potenciais de ação", "Termina no cerebelo"],
+    correct: 1,
+    explain: "As sensações olfatórias são as únicas que atingem o córtex cerebral sem primeiro fazer sinapse no tálamo, com conexões diretas ao sistema límbico (amígdala, hipocampo)."
+  },
+  {
+    q: "Aproximadamente quantos tipos funcionais de receptores olfatórios existem no nariz humano?",
+    options: ["Cerca de 5 tipos", "Cerca de 50 tipos", "Cerca de 400 tipos", "Cerca de 10 mil tipos"],
+    correct: 2,
+    explain: "O nariz humano contém cerca de 10 milhões de receptores olfatórios, divididos em cerca de 400 tipos funcionais diferentes (um tipo de receptor por célula olfatória)."
+  },
+  {
+    q: "Qual tipo de papila lingual NÃO contém calículos gustatórios?",
+    options: ["Circunvaladas", "Fungiformes", "Folhadas", "Filiformes"],
+    correct: 3,
+    explain: "As papilas filiformes contêm receptores táteis (não calículos gustatórios) e aumentam o atrito entre a língua e os alimentos. As circunvaladas, fungiformes e folhadas contêm calículos gustatórios."
+  },
+  {
+    q: "A sensibilidade especial (paladar) dos 2/3 anteriores da língua é conduzida por qual estrutura?",
+    options: ["Nervo lingual (NC V3)", "Corda do tímpano (ramo do NC VII)", "Nervo glossofaríngeo (NC IX)", "Nervo hipoglosso (NC XII)"],
+    correct: 1,
+    explain: "A sensibilidade especial (paladar) dos 2/3 anteriores da língua, exceto as papilas circunvaladas, é suprida pela corda do tímpano, um ramo do NC VII. A sensibilidade geral vem do nervo lingual (V3)."
+  },
+  {
+    q: "Como se divide funcionalmente a mucosa do nariz?",
+    options: ["Metade respiratória e metade olfatória", "Os 2/3 inferiores são a área respiratória e o 1/3 superior é a área olfatória", "Toda a mucosa é olfatória", "O 1/3 inferior é olfatório e os 2/3 superiores são respiratórios"],
+    correct: 1,
+    explain: "Os dois terços inferiores da mucosa nasal correspondem à área respiratória (aquece e umedece o ar) e o terço superior é a área olfatória."
+  },
+  {
+    q: "Qual é o sítio primário de integração gustativo-olfativa (percepção de flavor)?",
+    options: ["O núcleo do trato solitário", "O bulbo olfatório", "O córtex orbitofrontal (COF)", "O cerebelo"],
+    correct: 2,
+    explain: "O córtex orbitofrontal (COF) é o sítio primário de integração gustativo-olfativa, recebendo aferências das duas modalidades por vias paralelas e possuindo neurônios que respondem bimodalmente."
+  },
+  {
+    q: "Como a grelina (hormônio da fome) modula a percepção do sabor?",
+    options: ["Reduz a resposta do COF ao sabor", "Aumenta a sensibilidade a odores alimentares e amplia a palatabilidade percebida", "Bloqueia a via gustativa", "Não tem efeito sobre a olfação"],
+    correct: 1,
+    explain: "A grelina aumenta a sensibilidade do bulbo olfatório e do COF a odores alimentares e amplia a palatabilidade percebida. Já a leptina (saciedade) reduz a resposta do COF ao sabor."
+  },
+  {
+    q: "Qual o mecanismo dominante da anosmia relacionada à COVID-19?",
+    options: ["Destruição direta e irreversível dos neurônios olfativos", "Infecção e disfunção das células sustentaculares do epitélio olfativo, com inflamação", "Obstrução mecânica dos cóanos", "Lesão do nervo facial"],
+    correct: 1,
+    explain: "O mecanismo dominante não é a destruição direta dos neurônios olfativos, mas a infecção e disfunção das células sustentaculares do epitélio olfativo, provocando inflamação e desconexão funcional."
+  },
+  {
+    q: "Em relação às doenças neurodegenerativas, a disfunção olfatória:",
+    options: ["Só aparece nas fases terminais", "Frequentemente precede os sintomas motores/cognitivos (ex.: hiposmia em 90% dos casos de Parkinson)", "Não tem relação com essas doenças", "Ocorre apenas na esclerose múltipla"],
+    correct: 1,
+    explain: "A disfunção olfativa frequentemente precede os sintomas motores ou cognitivos. Na doença de Parkinson, a hiposmia está presente em 90% dos casos e pode anteceder o diagnóstico em 4 a 6 anos."
+  },
+  {
+    q: "Segundo o modelo biopsicossocial, qual deficiência sensorial tem a associação mais forte com depressão?",
+    options: ["Deficiência visual isolada", "Deficiência auditiva isolada", "Deficiência sensorial dupla (visual + auditiva)", "Deficiência olfatória isolada"],
+    correct: 2,
+    explain: "A deficiência sensorial dupla apresenta as associações mais fortes com depressão, com aumento de 1,27 a 2,41 vezes no risco comparado a indivíduos sem deficiências, em relação bidirecional e dose-dependente."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>
