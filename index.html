@@ -2,53 +2,101 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel de Estudos — PBL</title>
 <style>
-  :root{ --primary:#7a1f3d; --primary-light:#f0dbe3; --bg:#faf7f8; }
-  *{box-sizing:border-box;}
-  body{ font-family:'Segoe UI', Arial, sans-serif; background:var(--bg); margin:0; padding:24px; color:#222; }
-  .wrap{ max-width:920px; margin:0 auto; }
+  :root{
+    --primary:#7a1f3d;
+    --accent:#a83a63;
+    --primary-light:#f0dbe3;
+    --card:#fff;
+    --border:#ead5de;
+    --muted:#8a8a8a;
+    --text:#2a2226;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:linear-gradient(180deg,#faf7f8,#f2eef1);
+    background-attachment:fixed;
+    margin:0; padding:24px; color:var(--text);
+  }
+  .wrap{ max-width:940px; margin:0 auto; }
   h1{ color:var(--primary); font-size:24px; margin-bottom:2px; }
-  .subtitle{ color:#777; font-size:13.5px; margin-bottom:20px; }
-  .search{ width:100%; padding:12px 16px; border-radius:10px; border:2px solid var(--primary-light); font-size:14.5px; margin-bottom:22px; }
+  .subtitle{ color:var(--muted); font-size:13.5px; margin-bottom:18px; }
+
+  .search{
+    width:100%; padding:12px 16px; border-radius:14px;
+    border:2px solid var(--primary-light); font-size:14.5px;
+    margin-bottom:14px; box-shadow:0 4px 12px rgba(0,0,0,.05);
+  }
   .search:focus{ outline:none; border-color:var(--primary); }
-  .fase-group{ margin-bottom:28px; }
-  .fase-title{cursor:pointer; font-size:15px; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; border-bottom:2px solid var(--primary-light); padding-bottom:6px; }
-  .sp-card{ background:#fff; border:2px solid var(--primary-light); border-radius:14px; padding:16px 20px; margin-bottom:14px; box-shadow:0 3px 10px rgba(0,0,0,.05); }
-  .sp-card.hidden{ display:none; }
-  .sp-header{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
+
+  /* Filtros por disciplina */
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+  .chip{
+    background:#fff; border:1.5px solid var(--border); color:var(--primary);
+    padding:6px 13px; border-radius:20px; font-size:12.5px; font-weight:600;
+    cursor:pointer; transition:.15s;
+  }
+  .chip:hover{ border-color:var(--accent); }
+  .chip.active{ background:var(--primary); color:#fff; border-color:var(--primary); }
+
+  /* Grupos de fase (acordeão) */
+  .fase-group{
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:0; margin:18px 0; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.06);
+  }
+  .fase-group[hidden]{ display:none; }
+  .fase-title{
+    list-style:none; padding:16px 22px; margin:0; font-size:16px; font-weight:700;
+    color:var(--primary); background:#fff; display:flex; align-items:center;
+    cursor:pointer; user-select:none;
+  }
+  .fase-title::-webkit-details-marker{ display:none; }
+  .fase-title::before{ content:'▶'; margin-right:12px; color:var(--accent); font-size:12px; transition:transform .25s; }
+  details[open] > .fase-title::before{ transform:rotate(90deg); }
+  .fase-count{ color:var(--muted); font-weight:500; font-size:13px; margin-left:8px; }
+
+  .sp-card{
+    background:#fff; border:1px solid var(--border); border-radius:12px;
+    padding:15px 18px; margin:14px 18px; transition:.2s;
+  }
+  .sp-card:first-of-type{ margin-top:4px; }
+  .sp-card[hidden]{ display:none; }
+  .sp-card:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(122,31,61,.12); }
+
+  .sp-header{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+  .sp-left{ display:flex; align-items:baseline; flex-wrap:wrap; gap:8px; }
   .sp-num{ font-size:16px; font-weight:700; color:var(--primary); }
   .sp-title{ font-size:14px; color:#444; }
-  .sp-kw{ font-size:11.5px; color:#999; margin-bottom:12px; }
+  .sp-meta{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .badge{ font-size:10.5px; padding:2px 9px; border-radius:12px; font-weight:600; white-space:nowrap; }
+  .badge-disc{ background:var(--primary-light); color:var(--primary); }
+  .badge-date{ background:#eef1ee; color:#5a6b5a; }
+
+  .sp-kw{ font-size:11.5px; color:#9a9098; margin-bottom:12px; line-height:1.5; }
+
   .links{ display:flex; flex-wrap:wrap; gap:10px; }
-  .links a{ text-decoration:none; font-size:13px; font-weight:600; padding:8px 14px; border-radius:8px; border:2px solid var(--primary); color:var(--primary); transition:.15s; }
+  .links a{
+    text-decoration:none; font-size:13px; font-weight:600; padding:8px 14px;
+    border-radius:8px; border:2px solid var(--primary); color:var(--primary); transition:.15s;
+  }
   .links a:hover{ background:var(--primary); color:#fff; }
-  .links a.missing{ opacity:.35; pointer-events:none; border-style:dashed; }
-  .empty-msg{ text-align:center; color:#999; font-size:14px; padding:30px; display:none; }
+  .links a.missing{ opacity:.32; pointer-events:none; border-style:dashed; }
+
+  .empty-msg{ text-align:center; color:var(--muted); font-size:14px; padding:34px; display:none; }
   .empty-msg.show{ display:block; }
-  .footer-note{ margin-top:30px; font-size:11.5px; color:#aaa; text-align:center; }
-
-:root{
---primary:#7a1f3d;--accent:#a83a63;--bg:#f5f3f5;--card:#fff;--border:#ead5de;
-}
-body{background:linear-gradient(180deg,#faf7f8,#f2eef1)!important;}
-.fase-group{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:0;margin:18px 0;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.06);}
-.fase-title{list-style:none;padding:18px 22px;margin:0;font-size:16px!important;border:none!important;background:#fff;display:flex;align-items:center;font-weight:700}
-.fase-title::-webkit-details-marker{display:none;}
-.fase-title::before{content:'▶';margin-right:12px;color:var(--accent);transition:.25s;}
-details[open]>.fase-title::before{transform:rotate(90deg);}
-.sp-card{margin:14px 18px;border-radius:12px;transition:.2s;}
-.sp-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(122,31,61,.12);}
-.search{border-radius:14px!important;box-shadow:0 4px 12px rgba(0,0,0,.05);}
-
+  .footer-note{ margin-top:30px; font-size:11.5px; color:#bbb; text-align:center; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>📚 Painel de Estudos — PBL</h1>
-  <div class="subtitle">Resumos, flashcards e quizzes de todas as SPs, organizados por fase</div>
+  <div class="subtitle">Resumos, flashcards, Anki e quizzes de todas as SPs, organizados por fase</div>
 
-  <input type="text" class="search" id="searchBox" placeholder="🔎 Buscar por número da SP, título ou palavra-chave...">
+  <input type="text" class="search" id="searchBox" placeholder="🔎 Buscar por número da SP, título, palavra-chave ou disciplina...">
+  <div class="chips" id="chips"></div>
 
   <div id="content"></div>
   <div class="empty-msg" id="emptyMsg">Nenhuma SP encontrada para essa busca.</div>
@@ -61,26 +109,21 @@ details[open]>.fase-title::before{transform:rotate(90deg);}
 <script>
 /* ============================================================
    COMO ADICIONAR UMA NOVA SP:
-   Basta acrescentar um novo objeto ao array abaixo, dentro da
-   fase correspondente. Os campos "resumo", "flashcards"
-   e "quiz" devem ser o CAMINHO RELATIVO até o arquivo, a partir
-   da pasta onde este index.html está salvo.
+   Acrescente um objeto ao array abaixo, dentro da fase certa.
+   Campos de cada SP:
+     num        -> "SP X.Y" (usado também para ordenar)
+     titulo     -> nome da SP
+     disciplina -> tema/área (vira filtro e etiqueta); ex.: "Microbiologia"
+     data       -> data da aula (ex.: "4 mar 2026") ou "" se não tiver
+     keywords   -> palavras-chave (usadas na busca)
+     resumo / flashcards / anki / quiz -> caminho relativo do arquivo,
+        ou null se ainda não existir (o botão aparece desabilitado).
 
-   Estrutura usada neste repositório (tudo direto na raiz, sem
-   subpastas — mais simples para o GitHub Pages):
-     index.html   <-- este arquivo
-     SP1.1_3aFase_Resumo.pdf
-     SP1.1_3aFase_Flashcards.html
-     SP1.1_3aFase_Quiz.html
-     SP1.2_3aFase_Resumo.pdf
+   Estrutura no repositório (tudo na raiz, sem subpastas):
+     index.html
+     SP1.1_3aFase_Resumo.pdf / _Flashcards.html / _Anki.txt / _Quiz.html
      ...
-
-   OBS: o botão de Anki foi removido do painel a partir da SP1.3 —
-   os arquivos Anki continuam sendo gerados normalmente, só não
-   aparecem mais aqui.
-
-   Se algum arquivo ainda não existir, apague a linha correspondente
-   (ou deixe null) — o botão aparecerá desabilitado automaticamente.
+   As SPs são ordenadas automaticamente pelo número.
    ============================================================ */
 
 const DATA = [
@@ -88,30 +131,50 @@ const DATA = [
     fase: "2ª Fase",
     sps: [
       {
+        num: "SP 2.1",
+        titulo: "Sem vontade de comer nada...",
+        disciplina: "Fisiologia",
+        data: "4 mar 2026",
+        keywords: "Bioeletrogênese, potencial de membrana, potencial de ação, gustação, olfação, paladar, sabor, papilas, calículos gustatórios, nervos cranianos, epitélio olfatório, integração sensorial, córtex orbitofrontal, anosmia, disgeusia, língua, nariz",
+        resumo: "SP2.1_2aFase_Resumo.pdf",
+        flashcards: "SP2.1_2aFase_Flashcards.html",
+        anki: "SP2.1_2aFase_Anki.txt",
+        quiz: "SP2.1_2aFase_Quiz.html"
+      },
+      {
         num: "SP 3.2",
         titulo: "O Retorno de Paulo",
+        disciplina: "Microbiologia",
+        data: "",
         keywords: "Vírus, patogenicidade, interações hospedeiro-patógeno, doenças infecciosas, epidemiologia, dengue, classificação de Baltimore, imunidade inata, imunidade adaptativa",
         resumo: "SP3.2_2aFase_Resumo.pdf",
         flashcards: "SP3.2_2aFase_Flashcards.html",
+        anki: "SP3.2_2aFase_Anki.txt",
         quiz: "SP3.2_2aFase_Quiz.html"
       },
       {
         num: "SP 3.3",
         titulo: "Quando tudo sai do eixo",
+        disciplina: "Microbiologia",
+        data: "",
         keywords: "Resistência bacteriana, microbiota, probióticos, antibióticos, colonização, disbiose, prebióticos, MRSA, β-lactamases, C. difficile, eixo intestino-cérebro, AGCC",
         resumo: "SP3.3_2aFase_Resumo.pdf",
         flashcards: "SP3.3_2aFase_Flashcards.html",
+        anki: "SP3.3_2aFase_Anki.txt",
         quiz: "SP3.3_2aFase_Quiz.html"
       },
       {
         num: "SP 3.4",
         titulo: "Entre águas e descasos",
+        disciplina: "Parasitologia",
+        data: "",
         keywords: "Helmintos, parasitologia, ascaridíase, enterobiose, oxiúro, teníase, cisticercose, ciclo biológico, nematódeos, cestoides, trematódeos, diagnóstico, Kato-Katz, albendazol, praziquantel, prevenção, saneamento, WASH, eosinofilia",
         resumo: "SP3.4_2aFase_Resumo.pdf",
         flashcards: "SP3.4_2aFase_Flashcards.html",
+        anki: "SP3.4_2aFase_Anki.txt",
         quiz: "SP3.4_2aFase_Quiz.html"
       }
-      // Acrescente as próximas SPs da 2ª Fase aqui, seguindo o mesmo modelo.
+      // Acrescente as próximas SPs da 2ª Fase aqui.
     ]
   },
   {
@@ -120,109 +183,161 @@ const DATA = [
       {
         num: "SP 1.1",
         titulo: "Primeira gestação, primeiros desafios",
+        disciplina: "Pediatria",
+        data: "",
         keywords: "Pré-natal, fatores de risco, teratógenos, rubéola, toxoplasmose, Zika, síndrome alcoólica fetal, prematuridade, RCIU",
         resumo: "SP1.1_3aFase_Resumo.pdf",
         flashcards: "SP1.1_3aFase_Flashcards.html",
+        anki: "SP1.1_3aFase_Anki.txt",
         quiz: "SP1.1_3aFase_Quiz.html"
       },
       {
         num: "SP 1.2",
         titulo: "Nasceu, e agora?",
+        disciplina: "Pediatria",
+        data: "",
         keywords: "Classificação do RN, PIG, GIG, AIG, Apgar, adaptação cardiorrespiratória, perda de peso fisiológica, termorregulação, icterícia neonatal, triagem neonatal, vitamina K",
         resumo: "SP1.2_3aFase_Resumo.pdf",
         flashcards: "SP1.2_3aFase_Flashcards.html",
+        anki: "SP1.2_3aFase_Anki.txt",
         quiz: "SP1.2_3aFase_Quiz.html"
       },
       {
         num: "SP 1.3",
         titulo: "\"Que seu remédio seja seu alimento...\" (Hipócrates)",
+        disciplina: "Pediatria",
+        data: "",
         keywords: "Crescimento, desenvolvimento infantil, antropometria, marcos neuropsicomotores, mielinização, sinapses, plasticidade cerebral, fatores socioeconômicos, aleitamento materno, desnutrição, sinais de alerta",
         resumo: "SP1.3_3aFase_Resumo.pdf",
         flashcards: "SP1.3_3aFase_Flashcards.html",
+        anki: "SP1.3_3aFase_Anki.txt",
         quiz: "SP1.3_3aFase_Quiz.html"
       },
       {
         num: "SP 1.4",
         titulo: "Entre escolhas e riscos: a saúde integral do adolescente",
+        disciplina: "Saúde do Adolescente",
+        data: "11 mar 2026",
         keywords: "Adolescência, ISTs, vaginose bacteriana, HPV, hepatite B, vacinação, meningocócica ACWY, obesidade, resistência insulínica, síndrome metabólica, acantose nigricans, Erikson, desenvolvimento psicossocial, depressão, bullying, promoção da saúde, APS, ECA, sigilo, ética",
         resumo: "SP1.4_3aFase_Resumo.pdf",
         flashcards: "SP1.4_3aFase_Flashcards.html",
+        anki: "SP1.4_3aFase_Anki.txt",
         quiz: "SP1.4_3aFase_Quiz.html"
       }
-      // Acrescente as próximas SPs aqui, seguindo o mesmo modelo.
+      // Acrescente as próximas SPs da 3ª Fase aqui.
     ]
   }
-  // Para uma nova fase, acrescente outro bloco:
-  // {
-  //   fase: "4ª Fase",
-  //   sps: [ ... ]
-  // }
+  // Para uma nova fase, acrescente outro bloco: { fase:"4ª Fase", sps:[ ... ] }
 ];
 
+// ---- Estado dos filtros ----
+let activeDisc = "Todas";
+let searchTerm = "";
+
+// Ordena as SPs de cada fase pelo número (ex.: SP 2.1 antes de SP 3.2)
+function spValue(num){
+  const m = (num || "").match(/(\d+)\.(\d+)/);
+  return m ? parseInt(m[1],10) * 100 + parseInt(m[2],10) : 9999;
+}
+DATA.forEach(f => f.sps.sort((a,b) => spValue(a.num) - spValue(b.num)));
+
+// Lista de disciplinas únicas (para os chips)
+const disciplinas = [...new Set(DATA.flatMap(f => f.sps.map(s => s.disciplina).filter(Boolean)))].sort();
+
 function linkOrDisabled(path, label, icon){
-  if(!path){
-    return `<a class="missing" href="#">${icon} ${label}</a>`;
-  }
-  return `<a href="${path}" target="_blank">${icon} ${label}</a>`;
+  if(!path) return `<a class="missing" href="#">${icon} ${label}</a>`;
+  return `<a href="${path}" target="_blank" rel="noopener">${icon} ${label}</a>`;
 }
 
-function render(filter){
+function matches(sp){
+  const okDisc = activeDisc === "Todas" || sp.disciplina === activeDisc;
+  const hay = `${sp.num} ${sp.titulo} ${sp.keywords} ${sp.disciplina} ${sp.data}`.toLowerCase();
+  const okSearch = !searchTerm || hay.includes(searchTerm);
+  return okDisc && okSearch;
+}
+
+function renderChips(){
+  const wrap = document.getElementById('chips');
+  const all = ["Todas", ...disciplinas];
+  wrap.innerHTML = '';
+  all.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (d === activeDisc ? ' active' : '');
+    b.textContent = d;
+    b.addEventListener('click', () => {
+      activeDisc = d;
+      try{ localStorage.setItem('pbl_disc', d); }catch(e){}
+      renderChips(); render();
+    });
+    wrap.appendChild(b);
+  });
+}
+
+function render(){
   const content = document.getElementById('content');
   content.innerHTML = '';
   let anyVisible = false;
 
   DATA.forEach(faseGroup => {
-    const details=document.createElement('details');
-    details.className='fase-group';
-    const summary=document.createElement('summary');
-    summary.className='fase-title';
-    summary.textContent=`${faseGroup.fase} (${faseGroup.sps.length} SPs)`;
+    const visibleSps = faseGroup.sps.filter(matches);
+    if(visibleSps.length === 0) return;   // esconde fases sem resultado
+    anyVisible = true;
+
+    const details = document.createElement('details');
+    details.className = 'fase-group';
+    details.open = true;                  // todas abertas por padrão
+
+    const summary = document.createElement('summary');
+    summary.className = 'fase-title';
+    const total = faseGroup.sps.length;
+    const filtering = searchTerm || activeDisc !== "Todas";
+    const countTxt = filtering ? `${visibleSps.length} de ${total} SPs` : `${total} SPs`;
+    summary.innerHTML = `${faseGroup.fase}<span class="fase-count">(${countTxt})</span>`;
     details.appendChild(summary);
-    let faseHasVisible=false;
 
-    faseGroup.sps.forEach(sp => {
-      const haystack = `${sp.num} ${sp.titulo} ${sp.keywords}`.toLowerCase();
-      const match = !filter || haystack.includes(filter);
-      if(match) { faseHasVisible = true; anyVisible = true; }
-
+    visibleSps.forEach(sp => {
       const card = document.createElement('div');
-      card.className = 'sp-card' + (match ? '' : ' hidden');
+      card.className = 'sp-card';
+      const dateBadge = sp.data ? `<span class="badge badge-date">📅 ${sp.data}</span>` : '';
+      const discBadge = sp.disciplina ? `<span class="badge badge-disc">${sp.disciplina}</span>` : '';
       card.innerHTML = `
         <div class="sp-header">
-          <span class="sp-num">${sp.num}</span>
-          <span class="sp-title">${sp.titulo}</span>
+          <div class="sp-left">
+            <span class="sp-num">${sp.num}</span>
+            <span class="sp-title">${sp.titulo}</span>
+          </div>
+          <div class="sp-meta">${discBadge}${dateBadge}</div>
         </div>
         <div class="sp-kw">${sp.keywords}</div>
         <div class="links">
           ${linkOrDisabled(sp.resumo, 'Resumo', '📄')}
           ${linkOrDisabled(sp.flashcards, 'Flashcards', '🃏')}
+          ${linkOrDisabled(sp.anki, 'Anki', '🎴')}
           ${linkOrDisabled(sp.quiz, 'Quiz', '📝')}
         </div>
       `;
       details.appendChild(card);
     });
 
-    if(faseHasVisible || !filter){details.open=!filter;}
-    if(filter && faseHasVisible){details.open=true;}
-    summary.addEventListener('click',()=>{});
     content.appendChild(details);
   });
 
   document.getElementById('emptyMsg').classList.toggle('show', !anyVisible);
 }
 
-document.getElementById('searchBox').addEventListener('input', (e)=>{
-  render(e.target.value.trim().toLowerCase());
+document.getElementById('searchBox').addEventListener('input', (e) => {
+  searchTerm = e.target.value.trim().toLowerCase();
+  render();
 });
 
+// Restaura o último filtro de disciplina usado
+try{
+  const saved = localStorage.getItem('pbl_disc');
+  if(saved && (saved === "Todas" || disciplinas.includes(saved))) activeDisc = saved;
+}catch(e){}
 
-document.addEventListener('toggle',e=>{
- if(e.target.tagName==='DETAILS'&&e.target.open){
-   document.querySelectorAll('details.fase-group').forEach(d=>{if(d!==e.target)d.open=false;});
- }
-},true);
-
-render('');
+renderChips();
+render();
 </script>
 </body>
 </html>
