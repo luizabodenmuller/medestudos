@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.3 (Geriatria) - Flashcards</title>
+<style>
+  :root { --primary:#7a1f3d; --primary-light:#9c3355; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .controls { max-width:900px; margin:0 auto 18px auto; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .filter-btn { background:#fff; border:1px solid #e6c9d3; color:var(--primary); padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { background:#f7ecf0; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .progress-wrap { max-width:900px; margin:0 auto 20px auto; text-align:center; font-size:13px; color:#444; }
+  .progress-bar { width:100%; max-width:400px; margin:6px auto 0 auto; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .2s; }
+  .deck { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card-outer { perspective:1200px; height:270px; }
+  .card-outer.hidden { display:none; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card-outer.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; padding:16px; display:flex; flex-direction:column; box-shadow:0 2px 6px rgba(0,0,0,0.12); overflow:auto; }
+  .card-front { background:#fff; border-top:5px solid var(--primary); }
+  .card-back { background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-light); margin-bottom:8px; font-weight:bold; }
+  .card-back .card-cat { color:#eeccd7; }
+  .card-text { font-size:12.5px; line-height:1.4; flex:1; }
+  .card-hint { font-size:10px; color:#999; text-align:center; margin-top:6px; }
+  .card-back .card-hint { color:#d9b3c0; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.3 — "Meu mundo caiu"</h1>
+  <p>Flashcards · 3ª Fase · Envelhecimento Musculoesquelético, Osteoporose e Quedas</p>
+</header>
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="controls" id="filterControls"></div>
+<div class="deck" id="deck"></div>
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 3.3 (geriatria).</footer>
+
+<script>
+const cards = [
+  {cat:"Sarcopenia", front:"O que é sarcopenia e qual sua provável origem?", back:"Declínio muscular idade-relacionado (perda de massa, força e velocidade de contração). Origem provavelmente neurogênica: perda de motoneurônios espinais alfa e redução das unidades motoras, com perda seletiva de fibras tipo II substituídas por gordura e tecido fibroso."},
+  {cat:"Sarcopenia", front:"Como evolui a força muscular com a idade?", back:"Máxima por volta dos 30 anos; cai ~15% por década a partir dos 50, chegando a ~30% por década após os 70 anos (praticamente metade aos 80). A massa muscular diminui ~50% entre os 20 e 90 anos."},
+  {cat:"Sarcopenia", front:"Qual marcador biológico está associado à sarcopenia?", back:"A miostatina sérica — fator que suprime o crescimento muscular. Correlaciona-se negativamente com a massa magra e o envelhecimento se associa a maior expressão de miostatina."},
+  {cat:"Sarcopenia", front:"Em quais fibras e membros o declínio muscular é mais evidente?", back:"Nas fibras do tipo II (de ~60% em adultos para <30% após os 80 anos) e nos membros inferiores — importantes para o equilíbrio, a ortostase e a marcha."},
+  {cat:"Envelhecimento ósseo", front:"Quando ocorre o pico de massa óssea e o que muda depois?", back:"Na 4ª década de vida (~90% já alcançada aos 18 anos). Depois, a formação estabiliza e a reabsorção aumenta, gerando perda progressiva — a 'osteopenia fisiológica'. Antes dos 50 anos perde-se osso trabecular; após, cortical."},
+  {cat:"Mineralização", front:"Quais as duas fases da mineralização óssea?", back:"(1) Fase mediada por vesículas da matriz (ectossomas com anexina A5 e NPT3): fosfato de cálcio amorfo → octacálcio → hidroxiapatita. (2) Fase de mineralização do colágeno, fora das vesículas, com formação de nódulos mineralizados."},
+  {cat:"Mineralização", front:"Qual o papel do pirofosfato e da TNAP na calcificação?", back:"O pirofosfato inibe a cristalização da hidroxiapatita. A fosfatase alcalina tecido-inespecífica (TNAP) degrada o pirofosfato, permitindo a calcificação; sua deficiência leva a ossos moles (calcificação inadequada)."},
+  {cat:"Cálcio/Hormônios", front:"Qual a ação do PTH sobre o cálcio?", back:"Aumenta o Ca2+ sanguíneo: mobiliza Ca2+ e fosfato do osso (osteoclastos via RANK-RANKL), aumenta a reabsorção renal de cálcio, aumenta a excreção de fosfato e a absorção intestinal (via calcitriol). Intermitente = anabólico; contínuo = catabólico."},
+  {cat:"Cálcio/Hormônios", front:"Qual a ação da calcitonina e como muda com a idade?", back:"Diminui o Ca2+ sanguíneo, inibindo os osteoclastos (oposto ao PTH, porém mais fraca). É muito ativa no jovem, mas sua atividade diminui com o envelhecimento; papel menor no adulto."},
+  {cat:"Cálcio/Hormônios", front:"Descreva a ativação da vitamina D.", back:"Pele: 7-desidrocolesterol + luz UV → vitamina D3. Fígado: → 25-hidroxicolecalciferol. Rim: → 1,25(OH)2D3 (calcitriol), por reação estimulada pelo PTH. O calcitriol aumenta a absorção intestinal de cálcio e fosfato."},
+  {cat:"Osteoporose", front:"Como a OMS define osteopenia e osteoporose pela DMO?", back:"Normal: T-score > −1 DP. Osteopenia: entre −1 e −2,5 DP. Osteoporose: T-score ≤ −2,5 DP. Osteoporose estabelecida: ≤ −2,5 DP com pelo menos uma fratura por fragilidade."},
+  {cat:"Osteoporose", front:"Diferencie a osteoporose senil da pós-menopausa.", back:"Senil: baixa renovação (↓atividade replicativa/sintética dos osteoblastos e osteoprogenitoras). Pós-menopausa: alta renovação (↓estrógeno → ↑IL-1, IL-6 e TNF → ↑RANKL e ↓OPG → ↑atividade osteoclástica)."},
+  {cat:"Osteoporose", front:"Como o estrógeno protege o osso?", back:"Inibe a apoptose dos osteoblastos, estimula a apoptose dos osteoclastos e suprime a produção de RANKL. Na década pós-menopausa podem ser perdidos até 2%/ano do osso cortical e 9%/ano do esponjoso."},
+  {cat:"Osteoporose", front:"Quais os tipos de fármacos para osteoporose?", back:"Antirreabsortivos/anticatabólicos (bifosfonatos como alendronato/risedronato, raloxifeno, calcitonina, ranelato de estrôncio) e pró-formadores/anabólicos (teriparatida — derivado do PTH). Cálcio e vitamina D isolados não corrigem completamente o risco."},
+  {cat:"Osteoartrite", front:"Qual o papel da inflamação na osteoartrite?", back:"É principalmente um distúrbio degenerativo da cartilagem articular; a inflamação atua como fator contribuinte secundário. Afeta articulações de carga (joelhos, quadris, coluna) e mãos."},
+  {cat:"Osteoartrite", front:"Qual o papel dos condrócitos, IL-1 e TNF-α na OA?", back:"IL-1 e TNF-α estimulam os condrócitos a produzir metaloproteinases (MPMs) que degradam o colágeno tipo II e os proteoglicanos, e inibem sua síntese. Há ↓proteoglicanos e ↑água na matriz, com produção de colágeno ectópico (tipo I)."},
+  {cat:"Osteoartrite", front:"Quais os achados da OA avançada no osso?", back:"Desnudamento do osso subcondral que vira nova superfície articular (eburnação/'marfim polido'), cistos subcondrais, corpos livres ('rato articular') e osteófitos marginais (via BMP/TGF-β)."},
+  {cat:"Osteoartrite", front:"Diferencie a dor da OA e os nódulos característicos.", back:"Dor mecânica (piora com o uso, melhora com repouso), rigidez matinal curta (<15-30 min), crepitação. Nódulos de Heberden (interfalângicas distais) e de Bouchard (proximais). Não há fusão articular (diferente da artrite reumatoide)."},
+  {cat:"Perda de locomoção", front:"Qual a magnitude da perda muscular na imobilização e no idoso?", back:"Adultos jovens perdem 5-9% da massa e 20-27% da força do quadríceps em 2 semanas de imobilização; essa atrofia é 3 a 6 vezes maior em idosos."},
+  {cat:"Perda de locomoção", front:"Quais as principais complicações sistêmicas da imobilidade?", back:"↑inflamação, ↓síntese proteica, ↑excreção de nitrogênio, úlceras por pressão (13,5% dos hospitalizados), tromboembolismo, pneumonia, ITU e descondicionamento cardiovascular (intolerância ortostática em ~3 dias)."},
+  {cat:"Perda de locomoção", front:"Como a perda de mobilidade afeta o psicossocial do idoso?", back:"Associa-se a depressão, queda da qualidade de vida, medo de cair, frustração, isolamento social e solidão, maior dependência de cuidados e institucionalização. Não é a doença em si, mas a limitação funcional que eleva o risco de depressão."},
+  {cat:"Epidemiologia", front:"Qual a incidência de osteoporose por sexo na 8ª década?", back:"~50% para as mulheres e ~20% para os homens da mesma idade. No Brasil, após os 50 anos, 1 em cada 3 mulheres e 1 em cada 5 homens sofrerá fratura relacionada à osteoporose."},
+  {cat:"Epidemiologia", front:"Qual a mortalidade da fratura de fêmur no idoso?", back:"~5% na internação, 12% em 3 meses e 20% no primeiro ano (EUA); até 30% nos maiores de 70 anos. Apenas 40-60% recuperam a mobilidade prévia e ~50% ficam dependentes para AVD."},
+  {cat:"Epidemiologia", front:"Qual o padrão etário das fraturas osteoporóticas?", back:"Fraturas de punho por volta da 5ª década; vertebrais aumentam após os 60 anos; e fraturas de fêmur têm maior incidência a partir da 7ª década. Os casos de fratura de quadril devem triplicar até 2050."},
+  {cat:"Manejo OA / AINEs", front:"Qual a primeira linha de tratamento da osteoartrite?", back:"Intervenções não farmacológicas oferecidas a todos: educação/autogerenciamento, exercício físico (elemento-chave), perda de peso (mesmo 5% ajuda) e fisioterapia. Dieta + exercício é superior a cada um isolado."},
+  {cat:"Manejo OA / AINEs", front:"Quais as três toxicidades principais do uso prolongado de AINEs?", back:"Gastrointestinal (↑2-4× úlcera/sangramento/perfuração), cardiovascular (↑IAM e insuficiência cardíaca; AVC hemorrágico com diclofenaco/meloxicam) e renal (↓fluxo renal, azotemia, lesão renal aguda)."},
+  {cat:"Manejo OA / AINEs", front:"Como reduzir o risco gastrointestinal dos AINEs?", back:"Usar inibidor de bomba de prótons (IBP) e/ou inibidor seletivo de COX-2; menor dose pelo menor tempo; uso 'conforme necessário'. Anticoagulados devem preferir COX-2 (celecoxibe), que não aumenta sangramento."},
+  {cat:"Quedas", front:"Qual a intervenção mais eficaz na prevenção de quedas?", back:"O exercício (dose mínima ~50 horas): exercícios funcionais, tai chi e treino combinado de equilíbrio + resistência. A caminhada isolada é ineficaz e pode até aumentar quedas."},
+  {cat:"Quedas", front:"Quais medicamentos aumentam o risco de quedas?", back:"Psicotrópicos (benzodiazepínicos, antidepressivos, antipsicóticos), anti-hipertensivos (hipotensão ortostática), opioides, anticolinérgicos e hipoglicemiantes. A revisão inclui avaliar polifarmácia (≥5 fármacos)."},
+  {cat:"Classificação ASA", front:"O que é a classificação ASA e o que significa ASA III?", back:"Sistema da American Society of Anesthesiologists que estratifica o estado pré-operatório em 6 classes. ASA III = doença sistêmica grave com limitação funcional (ex.: HAS/DM mal controlados, DPOC, DRC em diálise). É a classe da paciente Eloá."},
+  {cat:"Classificação ASA", front:"A idade avançada determina a classificação ASA?", back:"Não. A idade por si só não determina a classe ASA — o foco é a presença e gravidade das doenças sistêmicas e limitações funcionais. Classes altas não contraindicam cirurgia, mas indicam otimização e monitoramento reforçado."},
+  {cat:"Polifarmácia", front:"O que é polifarmácia e dependência funcional?", back:"Polifarmácia = uso de ≥5 medicamentos (grave se ≥10). Dependência funcional = incapacidade de realizar AVD/AIVD (incluindo autogerenciamento de medicamentos) sem auxílio de terceiros. O nº de fármacos é o principal preditor de eventos adversos."},
+  {cat:"Polifarmácia", front:"Quais as etapas do processo de desprescrição?", back:"(1) Identificar todos os medicamentos e indicações; (2) avaliar o risco global de dano; (3) avaliar benefício × dano de cada fármaco; (4) priorizar os de menor relação benefício-dano para descontinuar; (5) implementar e monitorar."},
+  {cat:"Polifarmácia", front:"Cite ferramentas para identificar medicamentos inadequados no idoso.", back:"Critérios de Beers (AGS), critérios STOPP/START, STOPPFrail (para frágeis) e ferramentas implícitas como ARMOR e GPGP. Modelos colaborativos médico-farmacêutico aumentam a eficácia."},
+  {cat:"Densitometria", front:"O que é a DXA e quando se usa T-score vs Z-score?", back:"Densitometria de dupla emissão de raios X, padrão-ouro da osteoporose. T-score (comparação com jovem adulto) classifica em pós-menopáusicas/homens ≥50a. Z-score (pareado por idade/sexo) é usado em crianças, adolescentes, pré-menopáusicas e homens de 20-50 anos."},
+  {cat:"Densitometria", front:"Como o T-score se relaciona ao risco de fratura?", back:"Cada declínio de aproximadamente 1 desvio-padrão na massa óssea aumenta o risco de fratura em 1,3 a 2,5 vezes em qualquer região. Os locais avaliados são coluna (L1-L4) e quadril (colo do fêmur, fêmur total)."},
+  {cat:"Densitometria", front:"Como se classificam as fraturas vertebrais na análise semiquantitativa?", back:"Grau I/leve: redução de 20-25% do corpo vertebral; Grau II/moderada: 25-40%; Grau III/grave: >40%. A radiografia de perfil (T4-T12 e L1-L4) identifica fraturas vertebrais assintomáticas."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeCat = cat; renderFilters(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+renderFilters();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.3 (Geriatria) - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.3 — "Meu mundo caiu"</h1>
+  <p>Quiz · 3ª Fase · Envelhecimento Musculoesquelético, Osteoporose e Quedas</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 3.3 (geriatria).</footer>
+
+<script>
+const questions = [
+  {
+    q: "Qual tipo de fibra muscular é mais comprometido na sarcopenia?",
+    options: ["Fibras do tipo I (lentas)", "Fibras do tipo II (rápidas)", "Ambas igualmente", "Fibras do diafragma"],
+    correct: 1,
+    explain: "A perda é seletiva das fibras do tipo II (de ~60% em adultos para menos de 30% após os 80 anos), sugerindo origem neurogênica com perda de motoneurônios alfa. A força do diafragma sofre pouca alteração."
+  },
+  {
+    q: "Qual é o marcador biológico da sarcopenia citado na fonte?",
+    options: ["Creatinina sérica", "Miostatina sérica", "Fosfatase alcalina", "Proteína C reativa"],
+    correct: 1,
+    explain: "A miostatina — fator que suprime o crescimento muscular — correlaciona-se negativamente com a massa magra e aumenta com o envelhecimento, sendo considerada marcador biológico da sarcopenia."
+  },
+  {
+    q: "Onde ocorre a conversão final da vitamina D em sua forma ativa (calcitriol)?",
+    options: ["Na pele", "No fígado", "No rim, por reação estimulada pelo PTH", "No intestino"],
+    correct: 2,
+    explain: "A ativação: pele (7-desidrocolesterol + UV → D3) → fígado (25-OH) → rim (1α-hidroxilase → 1,25(OH)2D3/calcitriol), etapa renal estimulada e controlada pelo PTH."
+  },
+  {
+    q: "Qual a ação da calcitonina sobre o metabolismo do cálcio?",
+    options: ["Aumenta o cálcio sanguíneo mobilizando osso", "Diminui o cálcio sanguíneo inibindo os osteoclastos", "Não tem efeito sobre o osso", "Estimula a reabsorção óssea"],
+    correct: 1,
+    explain: "A calcitonina diminui o cálcio sanguíneo inibindo os osteoclastos (efeito oposto ao do PTH, porém mais fraco). É muito ativa no jovem e sua atividade diminui com o envelhecimento."
+  },
+  {
+    q: "Qual enzima degrada o pirofosfato, permitindo a calcificação óssea?",
+    options: ["Anidrase carbônica", "Fosfatase alcalina tecido-inespecífica (TNAP)", "Metaloproteinase", "Fosfolipase"],
+    correct: 1,
+    explain: "O pirofosfato inibe a cristalização da hidroxiapatita; a TNAP o degrada, permitindo a calcificação conforme as necessidades. Sua deficiência leva a ossos moles por calcificação inadequada."
+  },
+  {
+    q: "Como a OMS define osteoporose pela densitometria?",
+    options: ["T-score entre -1 e -2,5 DP", "T-score ≤ -2,5 DP", "Z-score > -1 DP", "T-score > -1 DP"],
+    correct: 1,
+    explain: "Osteoporose: T-score ≤ -2,5 DP. A osteopenia fica entre -1 e -2,5 DP; e osteoporose estabelecida é T-score ≤ -2,5 DP com pelo menos uma fratura por fragilidade."
+  },
+  {
+    q: "Na osteoporose pós-menopausa, a queda do estrógeno leva a:",
+    options: ["Redução da atividade osteoclástica", "Aumento de IL-1, IL-6 e TNF, com ↑RANKL e ↓OPG e maior reabsorção óssea", "Osteoporose de baixa renovação", "Aumento da formação óssea"],
+    correct: 1,
+    explain: "A deficiência de estrógeno aumenta IL-1, IL-6 e TNF, elevando o RANKL e reduzindo a OPG, o que ativa os osteoclastos e gera osteoporose de ALTA renovação (a reabsorção domina)."
+  },
+  {
+    q: "Qual é o principal papel da inflamação na osteoartrite?",
+    options: ["É a causa primária da doença", "É um fator contribuinte secundário", "Não participa da OA", "Causa a fusão articular"],
+    correct: 1,
+    explain: "A OA é principalmente um distúrbio degenerativo da cartilagem articular; a inflamação atua como fator contribuinte secundário. Diferente da artrite reumatoide, não ocorre fusão articular."
+  },
+  {
+    q: "Quais citocinas estimulam a produção de metaloproteinases pelos condrócitos na OA?",
+    options: ["IL-10 e TGF-β", "IL-1 e TNF-α", "Interferon-gama e IL-4", "Eritropoetina e IL-2"],
+    correct: 1,
+    explain: "A IL-1 e o TNF-α estimulam a produção de metaloproteinases (MPMs) e inibem a síntese de colágeno tipo II e proteoglicanos pelos condrócitos, degradando a matriz cartilaginosa."
+  },
+  {
+    q: "Os nódulos de Heberden, característicos da osteoartrite, localizam-se nas:",
+    options: ["Articulações interfalângicas proximais", "Articulações interfalângicas distais", "Articulações metacarpofalângicas", "Articulações do punho"],
+    correct: 1,
+    explain: "Os nódulos de Heberden são osteófitos das articulações interfalângicas distais (mais comuns em mulheres); os de Bouchard localizam-se nas interfalângicas proximais."
+  },
+  {
+    q: "A atrofia muscular por imobilização no idoso, comparada ao adulto jovem, é:",
+    options: ["Igual", "3 a 6 vezes maior", "Menor", "Ausente"],
+    correct: 1,
+    explain: "Adultos jovens perdem 5-9% da massa e 20-27% da força do quadríceps em 2 semanas de imobilização; essa atrofia é 3 a 6 vezes maior em idosos."
+  },
+  {
+    q: "Segundo a fonte, o que mais eleva o risco de depressão no idoso com perda de mobilidade?",
+    options: ["A doença de base em si", "As limitações funcionais resultantes (participação social e relacionamentos)", "A idade cronológica", "O uso de medicamentos"],
+    correct: 1,
+    explain: "Não é a doença em si, mas as limitações funcionais resultantes — incluindo participação social e relacionamentos significativos — que aumentam o risco de depressão."
+  },
+  {
+    q: "Qual a mortalidade aproximada no primeiro ano após fratura de fêmur (dados dos EUA)?",
+    options: ["5%", "20%", "50%", "2%"],
+    correct: 1,
+    explain: "Cerca de 5% morrem na internação, 12% em 3 meses e 20% no primeiro ano após a fratura de fêmur. Nos maiores de 70 anos, a mortalidade no 1º ano pode chegar a 30%."
+  },
+  {
+    q: "Qual o tratamento de primeira linha da osteoartrite?",
+    options: ["AINEs orais", "Corticosteroide intra-articular", "Intervenções não farmacológicas (educação, exercício, perda de peso)", "Substituição articular"],
+    correct: 2,
+    explain: "As intervenções não farmacológicas são a primeira linha, oferecidas a todos os pacientes: educação/autogerenciamento, exercício físico (elemento-chave) e perda de peso (mesmo 5% melhora a dor)."
+  },
+  {
+    q: "Sobre a toxicidade dos AINEs, é correto afirmar que:",
+    options: ["Só têm toxicidade gastrointestinal", "Todos aumentam em 2-4× o risco de complicação GI grave e elevam risco cardiovascular e renal", "São seguros no idoso a longo prazo", "Não afetam a função renal"],
+    correct: 1,
+    explain: "Todos os AINEs aumentam 2-4× o risco de complicação GI alta grave (úlcera, sangramento, perfuração) e associam-se a maior risco de IAM/insuficiência cardíaca e de lesão renal aguda."
+  },
+  {
+    q: "Qual intervenção é a mais eficaz na prevenção de quedas em idosos?",
+    options: ["Programas de caminhada isolados", "Exercício (funcional, tai chi, equilíbrio + resistência)", "Suplementação de cálcio isolada", "Repouso"],
+    correct: 1,
+    explain: "O exercício é a intervenção mais eficaz (dose mínima ~50 h), sobretudo exercícios funcionais, tai chi e treino combinado de equilíbrio e resistência. Programas de caminhada isolados são ineficazes e podem aumentar quedas."
+  },
+  {
+    q: "A classificação ASA III corresponde a:",
+    options: ["Paciente saudável", "Doença sistêmica leve sem limitação funcional", "Doença sistêmica grave com limitação funcional substantiva", "Paciente moribundo"],
+    correct: 2,
+    explain: "ASA III = doença sistêmica grave com limitação funcional substantiva (ex.: HAS/DM mal controlados, DPOC, DRC em diálise). É a classificação atribuída à paciente Eloá no caso."
+  },
+  {
+    q: "Sobre a classificação ASA em idosos, é correto que:",
+    options: ["A idade avançada por si só determina a classe", "Classes altas contraindicam a cirurgia", "A idade isolada não determina a classe; o foco é a gravidade das doenças sistêmicas", "Não se aplica a idosos"],
+    correct: 2,
+    explain: "A idade avançada por si só não determina a classificação ASA; o foco está na presença e gravidade das doenças sistêmicas e limitações funcionais. Classes altas não contraindicam a cirurgia, mas indicam otimização e monitoramento reforçado."
+  },
+  {
+    q: "Polifarmácia é definida como o uso concomitante de:",
+    options: ["≥3 medicamentos", "≥5 medicamentos (grave se ≥10)", "≥2 medicamentos", "Qualquer medicamento contínuo"],
+    correct: 1,
+    explain: "Polifarmácia = uso de 5 ou mais medicamentos; considera-se polifarmácia grave quando 10 ou mais fármacos são usados simultaneamente. O número de medicamentos é o principal preditor de eventos adversos."
+  },
+  {
+    q: "Qual valor de T-score se usa e para que serve na densitometria (DXA)?",
+    options: ["Compara com pareado por idade/sexo, para crianças", "Compara com jovem adulto saudável, prediz risco de fratura e classifica a osteoporose", "Mede a força muscular", "É usado só em homens jovens"],
+    correct: 1,
+    explain: "O T-score compara a massa óssea com a média de um jovem adulto saudável; é usado para predizer o risco de fratura e classificar a osteoporose. Cada queda de ~1 DP aumenta o risco de fratura em 1,3 a 2,5 vezes."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>
