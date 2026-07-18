@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.2 (Geriatria) - Flashcards</title>
+<style>
+  :root { --primary:#7a1f3d; --primary-light:#9c3355; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .controls { max-width:900px; margin:0 auto 18px auto; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .filter-btn { background:#fff; border:1px solid #e6c9d3; color:var(--primary); padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { background:#f7ecf0; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .progress-wrap { max-width:900px; margin:0 auto 20px auto; text-align:center; font-size:13px; color:#444; }
+  .progress-bar { width:100%; max-width:400px; margin:6px auto 0 auto; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .2s; }
+  .deck { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card-outer { perspective:1200px; height:260px; }
+  .card-outer.hidden { display:none; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card-outer.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; padding:16px; display:flex; flex-direction:column; box-shadow:0 2px 6px rgba(0,0,0,0.12); overflow:auto; }
+  .card-front { background:#fff; border-top:5px solid var(--primary); }
+  .card-back { background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-light); margin-bottom:8px; font-weight:bold; }
+  .card-back .card-cat { color:#eeccd7; }
+  .card-text { font-size:12.5px; line-height:1.4; flex:1; }
+  .card-hint { font-size:10px; color:#999; text-align:center; margin-top:6px; }
+  .card-back .card-hint { color:#d9b3c0; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.2 — "Entre o Ritmo da Vida e o Peso dos Anos"</h1>
+  <p>Flashcards · 3ª Fase · Envelhecimento e Sistema Cardiovascular</p>
+</header>
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="controls" id="filterControls"></div>
+<div class="deck" id="deck"></div>
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 3.2 (geriatria).</footer>
+
+<script>
+const cards = [
+  {cat:"Envelhecimento CV", front:"O que ocorre com as células do nó sinoatrial no envelhecimento?", back:"Perda de 50 a 75% das células marca-passo, levando a menor frequência sinusal intrínseca; há também fibrose e perda de células do feixe de His/ramos (podendo causar bloqueios)."},
+  {cat:"Envelhecimento CV", front:"Por que aumenta a PA sistólica e pode cair a diastólica no idoso?", back:"Os grandes vasos e a aorta enrijecem (perda de elastina, substituição por colágeno) → ↑resistência vascular e ↑PA sistólica. A artéria rígida perde elasticidade para manter a pressão na diástole, então a PA diastólica pode cair."},
+  {cat:"Envelhecimento CV", front:"Por que há maior hipotensão postural no idoso?", back:"Pela diminuição da função reflexa dos barorreceptores (arco aórtico e seio carotídeo), que respondem menos às quedas de pressão ao levantar."},
+  {cat:"Envelhecimento CV", front:"O que acontece com a resposta beta-adrenérgica no coração idoso?", back:"O coração torna-se menos sensível à estimulação beta-adrenérgica (diminuição do número de receptores beta), respondendo de modo piorado ao efeito dilatador e ao aumento de frequência cardíaca."},
+  {cat:"AVC", front:"Quais as duas causas principais de AVC e a proporção da hemorrágica?", back:"Obstrução (maioria — placas ateroscleróticas → trombo) e ruptura de vaso (~20%, por PA elevada → hemorragia, compressão, isquemia e edema)."},
+  {cat:"AVC", front:"O que são infartos encefálicos silenciosos e quão comuns são?", back:"Pequenos infartos/micro-hemorragias sem sintoma aparente além de declínio cognitivo sutil. Cerca de 25% dos indivíduos com mais de 80 anos já sofreram um ou mais."},
+  {cat:"AVC", front:"Que áreas são afetadas na lesão da artéria cerebral média do hemisfério dominante?", back:"Área de Wernicke (compreensão da fala) e área de Broca (formação das palavras/fala), além de paralisia espástica dos músculos do lado oposto do corpo."},
+  {cat:"HAS", front:"Quais os três mecanismos pelos quais a HAS crônica reduz a expectativa de vida?", back:"(1) Sobrecarga cardíaca → IC precoce e DAC; (2) ruptura/obstrução de vaso cerebral → AVC; (3) dano renal → insuficiência renal."},
+  {cat:"HAS", front:"Descreva a sequência da hipertensão por sobrecarga de volume.", back:"↑ingestão de sal/água com função renal comprometida → expansão do LEC e do volume sanguíneo → ↑pressão de enchimento, retorno venoso e débito cardíaco → ↑PA; depois a autorregulação eleva a resistência periférica."},
+  {cat:"DAC", front:"Qual o principal controlador do fluxo coronariano?", back:"O metabolismo muscular local: fatores vasodilatadores liberados na atividade/hipóxia (adenosina — o mais importante —, K+, H+, CO2, bradicinina, prostaglandinas). O efeito simpático é modesto."},
+  {cat:"DAC", front:"Quais os estágios do desenvolvimento da placa aterosclerótica até o IAM?", back:"Depósito de colesterol subendotelial → invasão por tecido fibroso → necrose → calcificação → placa → superfície rugosa forma trombo → oclusão parcial/total → morte do miocárdio (IAM)."},
+  {cat:"DAC", front:"Quais as principais causas de morte após IAM?", back:"Diminuição do débito cardíaco (choque cardiogênico), edema pulmonar, fibrilação ventricular (mais perigosa nos primeiros 10 min) e ruptura cardíaca (tamponamento)."},
+  {cat:"DAC", front:"O que causa a dor da angina de peito e para onde irradia?", back:"Falta de oxigênio ao coração → glicólise anaeróbia → ácido láctico e compostos causadores de dor. Sentida sob o esterno, irradia para braço/ombro esquerdo, pescoço, face (às vezes braço direito)."},
+  {cat:"IC", front:"Quais as duas compensações da insuficiência cardíaca?", back:"Aguda: ativação simpática (coração mais forte, ↑FC, venoconstrição). Crônica: retenção renal de sódio e água (↓TFG, ↑renina-angiotensina II, ↑aldosterona, ↑ADH), que aumenta o volume sanguíneo e o retorno venoso."},
+  {cat:"IC", front:"O que caracteriza a IC compensada?", back:"Débito cardíaco quase normal em repouso, aumento da pressão atrial direita (distensão das jugulares), ↓reserva cardíaca, ↑FC, dispneia e ganho de peso por retenção de líquidos."},
+  {cat:"IC", front:"Quais os tratamentos da IC descompensada?", back:"Diuréticos (furosemida — também venodilata, ↓pré-carga), cardiotônicos (digitálicos — ↑Ca2+ intracelular e contratilidade) e restrição de sódio e água."},
+  {cat:"Inflamação Vascular", front:"Por que a PCR elevada se associa a maior risco de doença coronariana?", back:"Porque a aterosclerose é um processo inflamatório: macrófagos que ingerem colesterol viram células espumosas que secretam PCR, citocinas e fatores de crescimento. A PCR não é específica de aterosclerose."},
+  {cat:"Inflamação Vascular", front:"Como se inicia e perpetua a disfunção endotelial na aterosclerose?", back:"A lesão endotelial (tabagismo, HAS, DM) desencadeia adesão de leucócitos e entrada de LDL-c, que se oxida e amplia a lesão, estabelecendo um ciclo vicioso inflamatório com mais entrada de lipoproteínas. O HDL-c é protetor."},
+  {cat:"Inflamação Vascular", front:"Quais placas são mais instáveis e o que ocorre na ruptura?", back:"As placas ricas em gordura são mais propensas a romper (as fibrosas são mais estáveis). A ruptura forma trombo → embolia ou obstrução arterial aguda (responsável por ~50% das síndromes isquêmicas agudas)."},
+  {cat:"Inflamação Vascular", front:"Qual o papel das células Th1 e Th17 na inflamação vascular imunomediada?", back:"Th1 produz IFN-γ (ativa macrófagos); Th17 produz IL-17 (recruta neutrófilos). Com o TNF e quimiocinas, tornam a inflamação crônica e mais grave; a cronicidade frequentemente evolui com fibrose."},
+  {cat:"Epidemiologia", front:"Qual a prevalência de DCV por faixa etária no idoso?", back:"75-77% em adultos de 60-79 anos e 89-90% nos indivíduos com 80 anos ou mais. 60-90% dos idosos têm aterosclerose subclínica (cálcio coronariano, EIM carotídea, ITB)."},
+  {cat:"Epidemiologia", front:"Qual a importância das DCV na mortalidade dos idosos?", back:"São a principal causa de morte após os 75 anos. Os ≥75 anos (só ~6% da população dos EUA) concentram 35-40% dos IAM e até 60% das mortes por infarto; os ≥65 anos respondem por ~80% das mortes CV."},
+  {cat:"Epidemiologia", front:"Qual o principal fator de risco modificável para DCV e o que acontece com os fatores tradicionais no muito idoso?", back:"A HAS sistólica elevada (>metade dos DALY por DCV). A associação dos fatores tradicionais tende a se atenuar em idades muito avançadas; depressão, anemia e fragilidade também são relevantes."},
+  {cat:"Envelhecimento Acelerado", front:"Quais as duas marcas centrais do envelhecimento vascular?", back:"Disfunção endotelial generalizada e rigidez arterial central (aorta). A disfunção endotelial decorre da menor biodisponibilidade de óxido nítrico (NO)."},
+  {cat:"Envelhecimento Acelerado", front:"O que é o desacoplamento da eNOS?", back:"Alteração da função da eNOS relacionada à idade (por ↓do cofator BH4), resultando em menor liberação de NO e maior produção do pró-oxidante ânion superóxido (O2⁻). A arginase, que compete pela L-arginina, também aumenta."},
+  {cat:"Envelhecimento Acelerado", front:"Como o estresse oxidativo e o SRAA degradam o NO no envelhecimento?", back:"↑TNF-α eleva a NADPH oxidase → mais O2⁻, que reage com NO formando peroxinitrito (ONOO⁻). O SRAA aumenta com a idade (↑angiotensina II → ↑NADPH oxidase → ↑ROS); o H2O2 ativa o NF-κB, aumentando genes pró-inflamatórios."},
+  {cat:"Envelhecimento Acelerado", front:"O que causa a rigidez das artérias centrais no idoso?", back:"A perda de fibras elásticas e o aumento de colágeno na parede das grandes artérias. A rigidez retroalimenta a disfunção endotelial (maior carga hemodinâmica sobre o endotélio)."},
+  {cat:"Doença Crônica/Família", front:"Quais as características das doenças crônicas (DCNT)?", back:"Causas múltiplas (genéticas, fisiológicas, ambientais, comportamentais), início gradual, prognóstico incerto e longa/indefinida duração, com curso variável (agudizações) que pode gerar incapacidade e nem sempre leva à cura."},
+  {cat:"Doença Crônica/Família", front:"Quais as três trajetórias das doenças crônicas no idoso?", back:"(1) Declínio evidente em curto período (câncer); (2) longo período de limitações com exacerbações e morte súbita (falência de órgãos); (3) decadência prolongada (demência, sequela de AVC, fragilidade)."},
+  {cat:"Doença Crônica/Família", front:"O que é a 'conspiração do silêncio' e por que é prejudicial?", back:"Ocultar do paciente informações sobre prognóstico/evolução para 'protegê-lo'. Produz efeito inverso: aumenta a ansiedade, gera desconfiança e fragiliza a autonomia, impedindo o planejamento antecipado de cuidados."},
+  {cat:"Doença Crônica/Família", front:"O que é a síndrome de burnout do cuidador?", back:"Quadro que se desenvolve em cuidadores familiares que não cuidam de si, caracterizado por exaustão emocional, despersonalização e redução da capacidade empática, deteriorando a qualidade do suporte ao paciente."},
+  {cat:"Exercício Físico", front:"Como o exercício melhora a função endotelial?", back:"O aumento do fluxo gera shear stress fisiológico sobre o endotélio, que responde com ↑expressão da eNOS e maior produção de NO → vasodilatação sustentada, ↓rigidez arterial e melhor reatividade vascular."},
+  {cat:"Exercício Físico", front:"Por quais mecanismos o exercício reduz a pressão arterial?", back:"↓resistência vascular periférica (↑NO), modulação autonômica (↓simpático/↑vagal), inibição do SRAA (↓angiotensina II) e hipotensão pós-exercício (até 24 h). Reduz 5-8 mmHg (sistólica) e 3-5 mmHg (diastólica)."},
+  {cat:"Exercício Físico", front:"Como o exercício melhora o controle glicêmico no DM2?", back:"Promove translocação do GLUT-4 por vias independentes de insulina (AMPK/contração), captando glicose mesmo na resistência insulínica; reduz a HbA1c em 0,6-1,0% e a gordura visceral/hepática. O DPP mostrou ↓58% na progressão pré-DM→DM2."},
+  {cat:"Exercício Físico", front:"Quais os efeitos do exercício sobre o perfil lipídico?", back:"↑lipase lipoproteica (↓TG em 20-30%), ↑HDL (via LCAT e ↓CETP), ↓fração de LDL pequeno e denso (a mais aterogênica) e ↓VLDL/gordura hepática. É a 'polipílula do exercício'."},
+  {cat:"Hábitos de Vida", front:"Por que o excesso de sódio é tão prejudicial ao idoso?", back:"O rim envelhecido tem menor capacidade de excretar sódio, tornando o organismo mais sensível a variações na ingestão. É o fator dietético mais diretamente associado à HAS no idoso."},
+  {cat:"Hábitos de Vida", front:"Qual dieta tem maior evidência de proteção cardiovascular e qual estudo a apoia?", back:"A dieta mediterrânea (azeite, vegetais, frutas, leguminosas, peixes, integrais; pobre em carne vermelha e ultraprocessados). O estudo PREDIMED demonstrou redução de 30% nos eventos CV maiores."},
+  {cat:"Hábitos de Vida", front:"Como a nicotina e o monóxido de carbono do cigarro agridem o sistema CV?", back:"A nicotina libera catecolaminas (taquicardia, vasoconstrição, ↑PA aguda). O CO liga-se à hemoglobina com afinidade 200× maior que o O2 (carboxi-hemoglobina), reduzindo o transporte de O2 ao miocárdio."},
+  {cat:"Hábitos de Vida", front:"A cessação do tabagismo beneficia o idoso?", back:"Sim, mesmo em octogenários: após 1 ano sem fumar o risco cardiovascular reduz-se à metade; após 5 anos, o risco de AVC iguala-se ao de não fumantes."},
+  {cat:"Hábitos de Vida", front:"Por que o álcool é mais perigoso no idoso?", back:"↓água corporal eleva a concentração de etanol; metabolismo hepático mais lento. Causa miocardiopatia alcoólica, fibrilação atrial ('holiday heart', AVC 5×), ↑PA e TG, e ↑risco de quedas/fraturas."},
+  {cat:"Imagem Vascular", front:"O que é a EIM carotídea e seus valores de referência?", back:"Espessura íntima-média carotídea: marcador de aterosclerose subclínica. Normal <0,9 mm; 0,9-1,0 limítrofe; >1,0 significativo; >1,5 mm = placa. Cada ↑0,1 mm → ↑11% no risco de IAM e ↑13% de AVC."},
+  {cat:"Imagem Vascular", front:"Como se interpreta o escore de cálcio coronariano (CAC)?", back:"0 = risco muito baixo; 1-99 = aterosclerose leve; 100-399 = moderada; >400 = extensa/risco elevado. É o mais potente preditor individual de eventos em assintomáticos e reclassifica risco intermediário."},
+  {cat:"Imagem Vascular", front:"Qual exame é padrão para TVP e qual para excluir DAC obstrutiva?", back:"TVP: Doppler de membros inferiores (incompressibilidade + ausência de fluxo; sensibilidade >95% na proximal). Excluir DAC obstrutiva: angio-TC coronária (ACTC), com sensibilidade ~99% para 'descarte'."},
+  {cat:"Imagem Vascular", front:"Que particularidades a escolha de imagem deve considerar no idoso?", back:"DRC (evitar contraste iodado e gadolínio → priorizar Doppler); calcificação extensa (artefatos na TC, pseudo-hipertensão → IVUS/OCT); e o impacto na conduta — no idoso frágil, exame que não muda a decisão não deve ser feito."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeCat = cat; renderFilters(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+renderFilters();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.2 (Geriatria) - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.2 — "Entre o Ritmo da Vida e o Peso dos Anos"</h1>
+  <p>Quiz · 3ª Fase · Envelhecimento e Sistema Cardiovascular</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 3.2 (geriatria).</footer>
+
+<script>
+const questions = [
+  {
+    q: "Qual alteração explica o aumento da PA sistólica com o envelhecimento?",
+    options: ["Aumento da elasticidade da aorta", "Enrijecimento dos grandes vasos por perda de elastina e aumento de colágeno", "Redução da resistência vascular periférica", "Aumento do número de receptores beta"],
+    correct: 1,
+    explain: "Os grandes vasos e a aorta enrijecem pela perda gradual de elastina e substituição por colágeno, aumentando a resistência vascular e a pressão arterial sistólica; a diastólica pode até cair."
+  },
+  {
+    q: "A maior prevalência de hipotensão postural no idoso deve-se principalmente a:",
+    options: ["Aumento da função dos barorreceptores", "Diminuição da função reflexa dos barorreceptores do arco aórtico e seio carotídeo", "Excesso de receptores beta", "Aumento da elasticidade arterial"],
+    correct: 1,
+    explain: "A diminuição da função reflexa dos barorreceptores (arco aórtico e seio carotídeo), que respondem às mudanças de pressão, explica a maior prevalência de hipotensão postural no idoso."
+  },
+  {
+    q: "Aproximadamente qual proporção de indivíduos com mais de 80 anos já sofreu infartos encefálicos silenciosos?",
+    options: ["5%", "25%", "50%", "75%"],
+    correct: 1,
+    explain: "Cerca de 25% dos indivíduos com idade superior a 80 anos já sofreram um ou mais infartos encefálicos silenciosos, que podem se manifestar apenas como declínio cognitivo sutil."
+  },
+  {
+    q: "Qual é o principal controlador do fluxo sanguíneo coronariano?",
+    options: ["A estimulação simpática", "O metabolismo muscular local (adenosina e outros vasodilatadores)", "A pressão arterial diastólica isolada", "A frequência respiratória"],
+    correct: 1,
+    explain: "O metabolismo muscular local é o principal controlador: fatores vasodilatadores (adenosina — o mais importante —, K+, H+, CO2, bradicinina, prostaglandinas) são liberados conforme a atividade. O efeito simpático é modesto."
+  },
+  {
+    q: "Qual é o momento mais perigoso para a ocorrência de fibrilação ventricular após um IAM?",
+    options: ["Após 1 semana", "Nos primeiros 10 minutos", "Após 1 mês", "Somente durante o sono"],
+    correct: 1,
+    explain: "O momento mais perigoso para fibrilação ventricular é geralmente nos primeiros 10 minutos após o infarto agudo do miocárdio, favorecida pelo aumento do potássio extracelular e pela irritabilidade do músculo isquêmico."
+  },
+  {
+    q: "Na insuficiência cardíaca, a retenção crônica de sódio e água é mediada principalmente por:",
+    options: ["Aumento do peptídeo natriurético", "Ativação do sistema renina-angiotensina-aldosterona e ADH", "Redução da atividade simpática", "Aumento da taxa de filtração glomerular"],
+    correct: 1,
+    explain: "A queda do débito e da pressão arterial reduz a TFG e ativa o SRAA (↑angiotensina II, ↑aldosterona) e a liberação de ADH, promovendo a retenção compensatória de sódio e água."
+  },
+  {
+    q: "Qual medicamento usado na IC descompensada reduz a pré-carga por venodilatação, além do efeito diurético?",
+    options: ["Digitálico", "Furosemida", "Betabloqueador", "Nitroprussiato"],
+    correct: 1,
+    explain: "A furosemida (diurético) também provoca venodilatação, o que diminui a pré-carga cardíaca. Os digitálicos, por outro lado, aumentam o cálcio intracelular e a contratilidade."
+  },
+  {
+    q: "Por que a proteína C reativa (PCR) elevada se associa a maior risco de doença coronariana?",
+    options: ["Porque é um marcador específico de aterosclerose", "Porque a aterosclerose é um processo inflamatório e as células espumosas secretam PCR e citocinas", "Porque a PCR causa diretamente o infarto", "Porque a PCR baixa o colesterol"],
+    correct: 1,
+    explain: "A aterosclerose é um processo inflamatório; os macrófagos que ingerem colesterol tornam-se células espumosas que secretam PCR, citocinas e fatores de crescimento. A PCR não é, porém, específica de aterosclerose."
+  },
+  {
+    q: "Quais placas ateroscleróticas têm maior propensão a romper e causar eventos agudos?",
+    options: ["As placas fibrosas", "As placas ricas em gordura (lipídicas)", "As placas totalmente calcificadas", "As placas pequenas apenas"],
+    correct: 1,
+    explain: "As placas mais ricas em gordura apresentam maior propensão a desencadear acidentes tromboembólicos agudos; as placas mais fibrosas são mais estáveis."
+  },
+  {
+    q: "Qual a prevalência de doenças cardiovasculares em indivíduos com 80 anos ou mais?",
+    options: ["25-30%", "50-55%", "89-90%", "menos de 10%"],
+    correct: 2,
+    explain: "As DCV apresentam prevalência de 75-77% em adultos de 60-79 anos e 89-90% em indivíduos com 80 anos ou mais."
+  },
+  {
+    q: "Qual é o principal fator de risco modificável para DCV globalmente?",
+    options: ["Consumo de café", "A hipertensão arterial sistólica elevada", "Baixa ingestão de água", "Excesso de sono"],
+    correct: 1,
+    explain: "A hipertensão arterial sistólica elevada é o principal fator de risco modificável, contribuindo para mais da metade dos DALY relacionados às DCV globalmente."
+  },
+  {
+    q: "O 'desacoplamento da eNOS' no envelhecimento vascular resulta em:",
+    options: ["Aumento da produção de óxido nítrico", "Menor liberação de NO e maior produção de ânion superóxido (O2⁻)", "Aumento do cofator BH4", "Redução do estresse oxidativo"],
+    correct: 1,
+    explain: "Com a idade, a queda do cofator BH4 leva ao desacoplamento da eNOS: menor liberação de NO e aumento da produção do pró-oxidante ânion superóxido (O2⁻)."
+  },
+  {
+    q: "O que caracteriza a rigidez das artérias centrais no envelhecimento?",
+    options: ["Aumento das fibras elásticas", "Perda de fibras elásticas e aumento do colágeno", "Redução do colágeno", "Aumento do óxido nítrico"],
+    correct: 1,
+    explain: "A rigidez das grandes artérias elásticas (aorta) resulta primariamente da perda de fibras elásticas e do aumento de colágeno, retroalimentando a disfunção endotelial."
+  },
+  {
+    q: "Quais são as três trajetórias das doenças crônicas no idoso?",
+    options: ["Aguda, subaguda e crônica", "Declínio rápido (câncer), limitações com exacerbações/morte súbita (falência de órgãos) e decadência prolongada (demência/fragilidade)", "Leve, moderada e grave", "Reversível, irreversível e terminal"],
+    correct: 1,
+    explain: "As três trajetórias são: declínio evidente em curto período (câncer); longo período de limitações com exacerbações e morte súbita (falência de órgãos); e decadência prolongada (demência, sequela de AVC, fragilidade)."
+  },
+  {
+    q: "A 'conspiração do silêncio' na família de um paciente crônico:",
+    options: ["Protege eficazmente o paciente", "Priva o paciente de participar das decisões, aumenta a ansiedade e fragiliza a autonomia", "É recomendada em idosos", "Não tem impacto no cuidado"],
+    correct: 1,
+    explain: "Ocultar informações sobre prognóstico para 'proteger' produz efeito inverso: priva o paciente de participar das decisões, aumenta a ansiedade, gera desconfiança e fragiliza a autonomia."
+  },
+  {
+    q: "Como o exercício físico promove captação de glicose mesmo na resistência insulínica?",
+    options: ["Aumentando a secreção de insulina apenas", "Por translocação do GLUT-4 via AMPK e contração muscular (independente de insulina)", "Reduzindo o número de mitocôndrias", "Aumentando a gordura visceral"],
+    correct: 1,
+    explain: "Durante e após o exercício, ocorre translocação do GLUT-4 para a membrana muscular por vias independentes de insulina (mediadas pela AMPK e pela contração), captando glicose mesmo na resistência insulínica grave."
+  },
+  {
+    q: "Qual foi o resultado do Diabetes Prevention Program (DPP) sobre exercício e dieta?",
+    options: ["Não houve efeito", "Redução de 58% na progressão de pré-diabetes para DM2, superior à metformina (31%)", "Aumento do risco de DM2", "Efeito igual ao placebo"],
+    correct: 1,
+    explain: "O DPP demonstrou que a intervenção com exercício e dieta reduziu em 58% a progressão de pré-diabetes para DM2 — resultado superior ao da metformina (31%)."
+  },
+  {
+    q: "Qual o efeito mais consistente do exercício sobre o perfil lipídico?",
+    options: ["Grande redução do LDL total", "Elevação do HDL", "Aumento dos triglicerídeos", "Aumento do LDL pequeno e denso"],
+    correct: 1,
+    explain: "A elevação do HDL é o efeito mais consistente do exercício sobre o perfil lipídico (via ↑LCAT e ↓CETP). O exercício também reduz os triglicerídeos e a fração de LDL pequeno e denso."
+  },
+  {
+    q: "Sobre a cessação do tabagismo no idoso, é correto afirmar que:",
+    options: ["Não traz benefícios após os 65 anos", "Beneficia mesmo octogenários: após 1 ano o risco CV cai à metade e após 5 anos o risco de AVC iguala o de não fumantes", "Aumenta o risco cardiovascular", "Só é útil antes dos 50 anos"],
+    correct: 1,
+    explain: "O benefício da cessação ocorre mesmo em octogenários: após um ano sem fumar, o risco cardiovascular reduz-se à metade; após cinco anos, o risco de AVC equipara-se ao de não fumantes."
+  },
+  {
+    q: "Qual o valor da espessura íntima-média (EIM) carotídea que indica presença de placa aterosclerótica?",
+    options: ["Acima de 0,5 mm", "Acima de 1,5 mm", "Acima de 0,7 mm", "Qualquer valor mensurável"],
+    correct: 1,
+    explain: "A EIM carotídea normal é < 0,9 mm; 0,9-1,0 mm é limítrofe; acima de 1,0 mm é significativo; e acima de 1,5 mm indica placa aterosclerótica estabelecida."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>
