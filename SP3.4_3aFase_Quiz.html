@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.4 (Geriatria) - Quiz</title>
+<style>
+  :root { --primary:#7a1f3d; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:700px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .question-card { background:#fff; border-radius:10px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:10px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { background:#fff; border-radius:10px; padding:30px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .result-score { font-size:40px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:10px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.4 — "Inverno e primavera"</h1>
+  <p>Quiz · 3ª Fase · Envelhecimento Geniturinário e Endócrino</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="quizArea"></div>
+  <div id="resultArea" style="display:none;"></div>
+</div>
+<footer>Baseado exclusivamente no material da SP 3.4 (geriatria).</footer>
+
+<script>
+const questions = [
+  {
+    q: "Por que a creatinina plasmática pode subestimar a disfunção renal no idoso?",
+    options: ["Porque o idoso produz mais creatinina", "Porque a menor massa muscular só eleva a creatinina tardiamente, falseando função normal", "Porque a creatinina não depende da função renal", "Porque a ureia mascara a creatinina"],
+    correct: 1,
+    explain: "A creatinina é um metabólito muscular; como o idoso tem menor massa muscular, o nível plasmático só se eleva quando há comprometimento renal avançado. A ureia, por sua vez, sobe desproporcionalmente."
+  },
+  {
+    q: "Quantos glomérulos restam na 7ª década em relação ao número inicial?",
+    options: ["Cerca de 90%", "Cerca de 2/3", "Cerca de 1/3", "Praticamente todos"],
+    correct: 2,
+    explain: "O número de glomérulos (800 mil a 1 milhão ao nascer) mantém-se até a 4ª década e depois reduz-se progressivamente, alcançando cerca de 1/3 do número inicial na 7ª década."
+  },
+  {
+    q: "O que caracteriza a secreção de GH no idoso (somatopausa)?",
+    options: ["Perda da pulsatilidade e do ritmo circadiano", "Redução da intensidade dos pulsos, com pulsatilidade e ritmo mantidos", "Aumento da secreção total diária", "Ausência completa de secreção"],
+    correct: 1,
+    explain: "No idoso, a pulsatilidade, o ritmo circadiano e a resposta hepática ao GH estão mantidos; o que se reduz é a intensidade dos pulsos (~14% por década após a puberdade), diminuindo a secreção total diária."
+  },
+  {
+    q: "Como se comportam a testosterona e as gonadotrofinas (FSH/LH) no envelhecimento masculino?",
+    options: ["Testosterona sobe e FSH/LH caem", "Testosterona cai e FSH/LH sobem reacionalmente", "Todos caem proporcionalmente", "Todos permanecem estáveis"],
+    correct: 1,
+    explain: "A testosterona cai (EMAS: total -0,4%/ano, livre -1,3%/ano) e o FSH/LH sobem reacionalmente, sugerindo um fator gonadal primário, sem que a resposta das gonadotrofinas compense a disfunção."
+  },
+  {
+    q: "O que acontece com o DHEA/DHEAS ao longo da vida?",
+    options: ["Aumenta 2-5% ao ano", "Cai 2-5% ao ano, com redução de 80-90% em relação ao pico juvenil", "Permanece constante", "Só cai após os 90 anos"],
+    correct: 1,
+    explain: "A produção de DHEA/DHEAS cai cerca de 2 a 5% ao ano (nadir aos 70-80 anos), representando queda de 80 a 90% em relação ao pico da juventude, atribuída à menor atividade da enzima 17,20-liase."
+  },
+  {
+    q: "Qual receptor, quando ativado pelo simpático, relaxa o detrusor durante o armazenamento?",
+    options: ["Receptor M3 muscarínico", "Receptor β3-adrenérgico", "Receptor α1-adrenérgico", "Receptor nicotínico"],
+    correct: 1,
+    explain: "O simpático (nervo hipogástrico) relaxa o músculo detrusor via receptores β3-adrenérgicos e contrai o esfíncter uretral interno via receptores α1, favorecendo o armazenamento da urina."
+  },
+  {
+    q: "Qual neurotransmissor e receptor promovem a contração do detrusor no esvaziamento?",
+    options: ["Noradrenalina e β3", "Acetilcolina e receptores M2/M3 muscarínicos", "Óxido nítrico e α1", "Acetilcolina e receptor nicotínico"],
+    correct: 1,
+    explain: "O parassimpático (nervo pélvico) libera acetilcolina, que ativa os receptores M2 e M3 muscarínicos e contrai o detrusor; na uretra libera NO, que a relaxa, permitindo o esvaziamento."
+  },
+  {
+    q: "O que representa o mnemônico DIURAMID?",
+    options: ["Tipos de incontinência estabelecida", "Causas de incontinência urinária transitória (reversível)", "Fases da micção", "Fármacos para bexiga hiperativa"],
+    correct: 1,
+    explain: "DIURAMID resume as causas de incontinência transitória: Delirium, Infecção urinária, Uretrite/vaginite atrófica, Restrição de mobilidade, Aumento do débito, Medicamentos, Impactação fecal e Distúrbios psíquicos."
+  },
+  {
+    q: "Qual o tipo mais comum de incontinência estabelecida no idoso da comunidade?",
+    options: ["Incontinência de esforço", "Incontinência de urgência", "Incontinência por transbordamento", "Incontinência funcional"],
+    correct: 1,
+    explain: "A incontinência de urgência é a mais comum no idoso da comunidade; resulta da hiperatividade do detrusor, com contrações involuntárias durante a fase de enchimento vesical."
+  },
+  {
+    q: "Em que zona da próstata a HPB se origina?",
+    options: ["Zona periférica", "Zona central", "Zona de transição", "Zona fibromuscular anterior"],
+    correct: 2,
+    explain: "A HPB origina-se na zona de transição, que rodeia a uretra prostática entre o colo vesical e o veru montanum; sua expansão em direção ao lúmen uretral favorece os sintomas obstrutivos."
+  },
+  {
+    q: "Quais são os maiores fatores de risco para o desenvolvimento da HPB?",
+    options: ["Tabagismo e obesidade", "Idade e hormônios androgênios (testosterona/DHT)", "Raça e atividade sexual", "Vasectomia e álcool"],
+    correct: 1,
+    explain: "A idade e os hormônios androgênios (testosterona e di-hidrotestosterona) são os maiores fatores de risco. A HPB não ocorre em homens castrados antes da puberdade; raça, fumo e obesidade não têm relação significativa."
+  },
+  {
+    q: "Como se classifica um I-PSS de 8 a 19 pontos?",
+    options: ["Sintomas leves", "Sintomas moderados", "Sintomas graves", "Ausência de sintomas"],
+    correct: 1,
+    explain: "No escore internacional de sintomas prostáticos (I-PSS, 0-35): 0-7 = sintomas leves, 8-19 = moderados e 20-35 = graves."
+  },
+  {
+    q: "Qual o tratamento não farmacológico considerado pilar/1ª linha da incontinência de esforço?",
+    options: ["Antimuscarínicos", "Exercícios de Kegel (musculatura do assoalho pélvico)", "Cirurgia", "Sondagem intermitente"],
+    correct: 1,
+    explain: "Os exercícios de Kegel (fortalecimento do assoalho pélvico) são o pilar do tratamento comportamental e a 1ª linha na incontinência de esforço; os fármacos têm papel escasso nesse tipo."
+  },
+  {
+    q: "Qual a causa mais frequente de incontinência por transbordamento no homem idoso?",
+    options: ["Deficiência esfincteriana", "Obstrução uretral secundária à HPB", "Cistopatia diabética", "Prolapso genital"],
+    correct: 1,
+    explain: "No homem idoso, a incontinência por transbordamento decorre mais frequentemente da obstrução uretral secundária à hiperplasia prostática benigna (com hipocontratilidade do detrusor associada)."
+  },
+  {
+    q: "Qual classe de doença crônica tem a maior contribuição para a carga em idosos?",
+    options: ["Diabetes", "Doenças cardiovasculares (30,3% da carga)", "Doenças respiratórias", "Osteoartrite"],
+    correct: 1,
+    explain: "As doenças cardiovasculares representam a maior contribuição (30,3% da carga em pessoas ≥60 anos) e são a principal causa de morte. A HAS, presente em >70% dos idosos, é o principal fator de risco modificável."
+  },
+  {
+    q: "Aproximadamente qual proporção de idosos tem duas ou mais condições crônicas (multimorbidade)?",
+    options: ["20%", "50%", "80%", "10%"],
+    correct: 2,
+    explain: "Cerca de 95% dos idosos têm ao menos uma condição crônica e 80% têm duas ou mais. A multimorbidade gera polifarmácia, fragmentação do cuidado e custos crescentes."
+  },
+  {
+    q: "Qual a modalidade de imagem considerada padrão-ouro para a cólica renal (urolitíase)?",
+    options: ["Ultrassonografia", "TC sem contraste", "Ressonância magnética", "Urografia excretora"],
+    correct: 1,
+    explain: "A TC sem contraste é o padrão-ouro para avaliar a cólica renal, detectando quase todos os tipos de cálculos urinários e estimando a carga calculosa."
+  },
+  {
+    q: "Qual a principal vantagem da ultrassonografia na avaliação geniturinária do idoso?",
+    options: ["Alta sensibilidade para cálculos", "Não invasiva, sem radiação e baixo custo — exame inicial", "É o padrão-ouro para carcinoma urotelial", "Independe do operador"],
+    correct: 1,
+    explain: "A US é não invasiva, sem radiação ionizante e de baixo custo, sendo o exame inicial. Avalia complicações da HPB, resíduo pós-miccional e diferencia nefropata crônico de agudo. Limitações: operador-dependente e baixa sensibilidade para cálculos."
+  },
+  {
+    q: "Como a ressonância magnética diferencia HPB de adenocarcinoma prostático (em T2)?",
+    options: ["HPB hipointensa e câncer hiperintenso", "HPB com nódulos hiperintensos e adenocarcinoma hipointenso", "Ambos hiperintensos", "A RM não diferencia"],
+    correct: 1,
+    explain: "Em T2, a HPB apresenta nódulos hiperintensos, contrastando com os nódulos hipointensos do adenocarcinoma — o que torna a RM útil na diferenciação entre tecido prostático benigno e maligno."
+  },
+  {
+    q: "Que cuidado é essencial antes de administrar contraste iodado (TC) no idoso?",
+    options: ["Avaliar a função renal", "Suspender toda a medicação", "Realizar sempre urografia antes", "Jejum de 24 horas"],
+    correct: 0,
+    explain: "Na população idosa deve-se avaliar a função renal antes de administrar contraste iodado (TC) ou gadolínio (RM), além de balancear a acurácia diagnóstica com a exposição à radiação em avaliações seriadas."
+  }
+];
+
+let current = 0, score = 0, answered = false;
+
+function renderQuestion() {
+  const area = document.getElementById('quizArea');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if (current < questions.length) renderQuestion(); else showResult();
+  });
+}
+function selectOption(i) {
+  if (answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled', 'answered');
+    if (idx === q.correct) btn.classList.add('correct');
+    else if (idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if (i === q.correct) { score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+function showResult() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('quizArea').style.display = 'none';
+  const resultArea = document.getElementById('resultArea');
+  resultArea.style.display = 'block';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct >= 90 ? "Excelente domínio do conteúdo!" : pct >= 70 ? "Bom desempenho — revise os pontos que errou." : pct >= 50 ? "Desempenho razoável — vale revisar o resumo." : "Recomenda-se revisar o material com atenção.";
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Refazer quiz</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    current = 0; score = 0;
+    document.getElementById('quizArea').style.display = 'block';
+    resultArea.style.display = 'none';
+    renderQuestion();
+  });
+}
+renderQuestion();
+</script>
+</body>
+</html>

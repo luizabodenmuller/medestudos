@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>SP 3.4 (Geriatria) - Flashcards</title>
+<style>
+  :root { --primary:#7a1f3d; --primary-light:#9c3355; --bg:#faf7f8; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:20px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .controls { max-width:900px; margin:0 auto 18px auto; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .filter-btn { background:#fff; border:1px solid #e6c9d3; color:var(--primary); padding:6px 14px; border-radius:16px; font-size:12.5px; cursor:pointer; transition:all .15s; }
+  .filter-btn:hover { background:#f7ecf0; }
+  .filter-btn.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+  .progress-wrap { max-width:900px; margin:0 auto 20px auto; text-align:center; font-size:13px; color:#444; }
+  .progress-bar { width:100%; max-width:400px; margin:6px auto 0 auto; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .2s; }
+  .deck { max-width:900px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+  .card-outer { perspective:1200px; height:270px; }
+  .card-outer.hidden { display:none; }
+  .card-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer; }
+  .card-outer.flipped .card-inner { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:10px; padding:16px; display:flex; flex-direction:column; box-shadow:0 2px 6px rgba(0,0,0,0.12); overflow:auto; }
+  .card-front { background:#fff; border-top:5px solid var(--primary); }
+  .card-back { background:var(--primary); color:#fff; transform:rotateY(180deg); }
+  .card-cat { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-light); margin-bottom:8px; font-weight:bold; }
+  .card-back .card-cat { color:#eeccd7; }
+  .card-text { font-size:12.5px; line-height:1.4; flex:1; }
+  .card-hint { font-size:10px; color:#999; text-align:center; margin-top:6px; }
+  .card-back .card-hint { color:#d9b3c0; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SP 3.4 — "Inverno e primavera"</h1>
+  <p>Flashcards · 3ª Fase · Envelhecimento Geniturinário e Endócrino</p>
+</header>
+<div class="progress-wrap">
+  <span id="progressText">0 / 0 revisados</span>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+<div class="controls" id="filterControls"></div>
+<div class="deck" id="deck"></div>
+<footer>Clique no cartão para virar. Baseado exclusivamente no material da SP 3.4 (geriatria).</footer>
+
+<script>
+const cards = [
+  {cat:"Envelhecimento Renal", front:"O que acontece com o número de glomérulos no envelhecimento?", back:"O número (800 mil a 1 milhão ao nascer) mantém-se constante até a 4ª década; a partir daí reduz-se, chegando a cerca de 1/3 do inicial na 7ª década, com expansão mesangial e espessamento da membrana basal."},
+  {cat:"Envelhecimento Renal", front:"Qual a taxa de perda do ritmo de filtração glomerular (RFG) no idoso?", back:"A partir da 5ª década perde-se cerca de 1 mL/min do RFG por ano (1%), ou 10 mL a cada 10 anos. Valor normal: 80-120 mL/min para 1,73 m²."},
+  {cat:"Envelhecimento Renal", front:"Por que a creatinina plasmática pode enganar no idoso?", back:"A creatinina é um metabólito muscular; como o idoso tem menor massa muscular, a creatinina plasmática só se eleva quando já há comprometimento renal avançado, falseando uma função 'normal'. A ureia sobe desproporcionalmente."},
+  {cat:"Envelhecimento Vesical", front:"Quais alterações do envelhecimento tornam a bexiga mais suscetível à incontinência?", back:"Aumento de colágeno (↓elasticidade), alteração dos receptores de pressão (contrações intempestivas), hiperatividade do detrusor (21% de idosos continentes) e esclerose dos vasa vasorum (denervação)."},
+  {cat:"Envelhecimento Uretral", front:"O que muda na uretra da mulher e do homem idosos?", back:"Mulher: ↓pressão uretral máxima e do comprimento funcional; o hipoestrogenismo atrofia a mucosa (mais infecções). Homem: comprometimento extrínseco pela hipertrofia prostática."},
+  {cat:"Endócrino - GH", front:"O que muda na secreção de GH no idoso?", back:"A resposta hepática ao GH, a pulsatilidade e o ritmo circadiano estão mantidos; o que cai é a intensidade dos pulsos (~14% por década após a puberdade). A prevalência de deficiência de GH chega a 35% em homens de 60 anos ('somatopausa')."},
+  {cat:"Endócrino - Hipogonadismo", front:"Como se comportam testosterona, FSH e LH no envelhecimento masculino?", back:"A testosterona cai (EMAS: total -0,4%/ano, livre -1,3%/ano) e FSH/LH sobem reacionalmente, sugerindo um fator gonadal primário sem compensação adequada das gonadotrofinas."},
+  {cat:"Endócrino - Hipogonadismo", front:"Quais fatores suprimem o eixo gonadal no idoso?", back:"↑tecido adiposo (mais aromatase, converte T em estrógeno), hiporresponsividade do LH, resistência à leptina e aumento da SHBG (reduz a testosterona livre/ativa)."},
+  {cat:"Endócrino - Hipogonadismo", front:"Como se faz o rastreio e a triagem inicial de hipogonadismo?", back:"Escore ADAM (sensível 88%, específico 60%) e dosagem de testosterona da manhã. Confirmado, diferenciar primário (FSH/LH altos → cariótipo p/ Klinefelter) de secundário (baixos/normais → prolactina, hemocromatose)."},
+  {cat:"Endócrino - Adrenal", front:"O que ocorre com cortisol e DHEA/DHEAS no envelhecimento?", back:"O cortisol se mantém ou aumenta (média de 24 h maior, resposta ao estresse mais prolongada), sem síndrome de Cushing. O DHEA/DHEAS cai 2-5%/ano, com queda de 80-90% em relação ao pico juvenil (menor atividade da 17,20-liase)."},
+  {cat:"Epidemiologia", front:"Qual a prevalência histológica de HPB por faixa etária?", back:"25% em homens de 40-49 anos, aumentando para mais de 80% em homens de 70-79 anos. Até 90% dos octogenários apresentam sintomas do trato urinário inferior (LUTS)."},
+  {cat:"Epidemiologia", front:"Quais os principais fatores de risco para prolapso de órgãos pélvicos (POP)?", back:"Paridade e parto vaginal (lesão do assoalho pélvico), idade avançada (cada ano ↑10% do risco), obesidade, distúrbios do tecido conjuntivo, status menopausal, constipação crônica e histerectomia."},
+  {cat:"Micção", front:"Qual o papel do simpático no trato urinário inferior?", back:"Fase de armazenamento (T11-L2, nervo hipogástrico): relaxa o músculo detrusor (receptores β3) e contrai o esfíncter uretral interno (receptores α1), permitindo o enchimento vesical."},
+  {cat:"Micção", front:"Qual o papel do parassimpático e do somático na micção?", back:"Parassimpático (S2-S4, nervo pélvico): esvaziamento — contrai o detrusor (M2/M3) e libera NO (relaxa a uretra). Somático (núcleo de Onuf, nervo pudendo): contrai o esfíncter uretral externo estriado (receptor nicotínico)."},
+  {cat:"Incontinência", front:"O que significa o mnemônico DIURAMID?", back:"Causas de incontinência urinária transitória (reversível): Delirium, Infecção urinária, Uretrite/vaginite atrófica, Restrição de mobilidade, Aumento do débito urinário, Medicamentos, Impactação fecal, Distúrbios psíquicos."},
+  {cat:"Incontinência", front:"Qual o tipo mais comum de incontinência estabelecida no idoso da comunidade?", back:"A incontinência de urgência (perda precedida de desejo imperioso de urinar), que resulta da hiperatividade do detrusor com contrações involuntárias na fase de enchimento."},
+  {cat:"Incontinência", front:"O que é bexiga hiperativa (OAB)?", back:"Síndrome que inclui urgência urinária com ou sem incontinência, frequência elevada (8+ micções em 24 h) e noctúria (2+ despertares para urinar). Incontinência de urgência e OAB com incontinência são usadas como sinônimos."},
+  {cat:"Incontinência", front:"Qual a causa mais frequente de incontinência por transbordamento no homem idoso e a principal causa de IU na mulher idosa?", back:"No homem: obstrução uretral secundária à HPB. Na mulher idosa: incontinência mista (hiperatividade do detrusor + deficiência esfincteriana)."},
+  {cat:"Incontinência", front:"Qual o tratamento não farmacológico de 1ª linha da incontinência?", back:"Métodos conservadores: mudanças de estilo de vida (perda de peso, evitar cafeína/álcool/tabaco) e terapias comportamentais. Exercícios de Kegel são o pilar (1ª linha no esforço); treinamento vesical é 1ª linha na urgência."},
+  {cat:"HPB", front:"Em que zona da próstata a HPB se origina e quais os fatores de risco?", back:"Origina-se na zona de transição (rodeia a uretra prostática). Os maiores fatores de risco são a idade e os hormônios androgênios (testosterona e di-hidrotestosterona/DHT); não ocorre em castrados antes da puberdade."},
+  {cat:"HPB", front:"Quais os três componentes dos sintomas da HPB?", back:"Estático/mecânico (efeito de massa do adenoma, estimulado pela DHT); dinâmico (tônus dos músculos lisos do colo/cápsula, receptores α1); e disfunção detrusora (irritabilidade → urgência/frequência; depois hipocontratilidade → hesitação, resíduo)."},
+  {cat:"HPB", front:"Como se classifica a pontuação do I-PSS?", back:"O escore internacional de sintomas prostáticos (I-PSS) vai de 0 a 35: sintomas leves (0-7), moderados (8-19) e graves (20-35). Há uma questão complementar da OMS sobre qualidade de vida."},
+  {cat:"HPB", front:"Quais as classes farmacológicas usadas na HPB?", back:"Alfabloqueadores (tansulosina, silodosina — urosseletivos; doxazosina/terazosina — mais hipotensão) para o componente dinâmico; e inibidores da 5-alfa-redutase (finasterida, dutasterida) para reduzir o volume prostático."},
+  {cat:"HPB", front:"Quais as indicações absolutas de cirurgia na HPB?", back:"Complicações mórbidas: retenção urinária aguda, infecção urinária recorrente, hematúria macroscópica recorrente, litíase vesical, incontinência por hiperfluxo, insuficiência renal pós-renal e hidronefrose. Relativas: LUTS moderado-grave refratário."},
+  {cat:"Doenças Crônicas", front:"Qual doença crônica tem a maior contribuição para a carga em idosos?", back:"As doenças cardiovasculares (30,3% da carga total nos ≥60 anos), principal causa de morte. Mecanismos: aterosclerose progressiva, fibrose miocárdica e disfunção endotelial. A HAS (>70% dos idosos) é o principal fator modificável."},
+  {cat:"Doenças Crônicas", front:"O que é multimorbidade e qual sua prevalência nos idosos?", back:"Convergência de múltiplas doenças crônicas no mesmo paciente. Cerca de 95% dos idosos têm ≥1 condição crônica e 80% têm 2 ou mais, o que gera polifarmácia, fragmentação do cuidado e custos crescentes."},
+  {cat:"Doenças Crônicas", front:"Como o sobrepeso amplifica o risco de osteoartrite?", back:"Cada quilo extra de peso corporal gera 3 a 6 quilos de força adicional sobre as articulações dos joelhos durante a marcha. A OA associa-se a dor crônica, perda de independência, depressão e isolamento."},
+  {cat:"Imagem", front:"Qual o papel da ultrassonografia nas alterações geniturinárias?", back:"Não invasiva, sem radiação, baixo custo — exame inicial. Avalia complicações da HPB (hidronefrose, litíase, divertículos), resíduo pós-miccional e textura prostática. Diferencia nefropata crônico (rins pequenos) de agudo. Via transretal tem melhor sensibilidade."},
+  {cat:"Imagem", front:"Qual a modalidade de escolha para urolitíase e por quê?", back:"A TC sem contraste é o padrão-ouro para a cólica renal/urolitíase, detectando quase todos os tipos de cálculos e estimando a carga calculosa. A uro-TC (CTU) avalia todo o trato urinário na investigação de hematúria."},
+  {cat:"Imagem", front:"Que cuidados de imagem são específicos para o idoso?", back:"Avaliar a função renal antes de contraste iodado (TC) ou gadolínio (RM); balancear acurácia com exposição à radiação (avaliações seriadas); na hematúria microscópica de baixo risco a US pode ser suficiente, evitando custos e riscos da TC."},
+];
+
+const categories = [...new Set(cards.map(c => c.cat))];
+let activeCat = "Todos";
+const flipped = new Set();
+
+function render() {
+  const deck = document.getElementById('deck');
+  deck.innerHTML = '';
+  cards.forEach((c, i) => {
+    const show = activeCat === "Todos" || c.cat === activeCat;
+    const outer = document.createElement('div');
+    outer.className = 'card-outer' + (show ? '' : ' hidden') + (flipped.has(i) ? ' flipped' : '');
+    outer.innerHTML = `
+      <div class="card-inner" data-idx="${i}">
+        <div class="card-face card-front">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.front}</div>
+          <div class="card-hint">Clique para ver a resposta</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-cat">${c.cat}</div>
+          <div class="card-text">${c.back}</div>
+          <div class="card-hint">Clique para voltar</div>
+        </div>
+      </div>`;
+    outer.querySelector('.card-inner').addEventListener('click', () => {
+      if (flipped.has(i)) flipped.delete(i); else flipped.add(i);
+      outer.classList.toggle('flipped');
+      updateProgress();
+    });
+    deck.appendChild(outer);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const visibleIdx = cards.map((c,i)=>i).filter(i => activeCat === "Todos" || cards[i].cat === activeCat);
+  const total = visibleIdx.length;
+  const seen = visibleIdx.filter(i => flipped.has(i)).length;
+  document.getElementById('progressText').textContent = `${seen} / ${total} revisados`;
+  document.getElementById('progressFill').style.width = total ? `${(seen/total)*100}%` : '0%';
+}
+function renderFilters() {
+  const wrap = document.getElementById('filterControls');
+  const all = ["Todos", ...categories];
+  wrap.innerHTML = '';
+  all.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCat ? ' active' : '');
+    btn.textContent = cat;
+    btn.addEventListener('click', () => { activeCat = cat; renderFilters(); render(); });
+    wrap.appendChild(btn);
+  });
+}
+renderFilters();
+render();
+</script>
+</body>
+</html>
