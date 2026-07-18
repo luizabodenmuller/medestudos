@@ -77,17 +77,76 @@
 
   .sp-kw{ font-size:11.5px; color:#9a9098; margin-bottom:12px; line-height:1.5; }
 
-  .links{ display:flex; flex-wrap:wrap; gap:10px; }
-  .links a{
-    text-decoration:none; font-size:13px; font-weight:600; padding:8px 14px;
-    border-radius:8px; border:2px solid var(--primary); color:var(--primary); transition:.15s;
+  .actions{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .btn-open{
+    border:none; cursor:pointer; font-family:inherit;
+    font-size:13px; font-weight:700; padding:9px 18px; border-radius:8px;
+    background:var(--primary); color:#fff; transition:.15s;
   }
-  .links a:hover{ background:var(--primary); color:#fff; }
-  .links a.missing{ opacity:.32; pointer-events:none; border-style:dashed; }
+  .btn-open:hover{ background:var(--accent); }
 
   .empty-msg{ text-align:center; color:var(--muted); font-size:14px; padding:34px; display:none; }
   .empty-msg.show{ display:block; }
   .footer-note{ margin-top:30px; font-size:11.5px; color:#bbb; text-align:center; }
+
+  /* ===== Hub (visão da SP com abas) ===== */
+  .hub{ position:fixed; inset:0; z-index:1000; background:#f7f2f4; display:none; flex-direction:column; }
+  .hub.open{ display:flex; }
+  .hub-bar{
+    background:var(--primary); color:#fff; padding:9px 14px;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    box-shadow:0 2px 10px rgba(0,0,0,.2);
+  }
+  .hub-back{
+    background:rgba(255,255,255,.16); color:#fff; border:none; cursor:pointer;
+    font-family:inherit; font-size:13.5px; font-weight:600; padding:7px 14px; border-radius:8px;
+    white-space:nowrap;
+  }
+  .hub-back:hover{ background:rgba(255,255,255,.28); }
+  .hub-title{ font-size:14px; font-weight:600; flex:1; min-width:120px; }
+  .hub-title small{ display:block; font-weight:400; opacity:.8; font-size:11.5px; }
+  .hub-tabs{ background:#fff; display:flex; gap:2px; padding:0 10px; border-bottom:1px solid var(--border); overflow-x:auto; }
+  .hub-tab{
+    border:none; background:none; cursor:pointer; font-family:inherit;
+    font-size:13.5px; font-weight:600; color:var(--muted); padding:12px 16px;
+    border-bottom:3px solid transparent; white-space:nowrap;
+  }
+  .hub-tab:hover{ color:var(--primary); }
+  .hub-tab.active{ color:var(--primary); border-bottom-color:var(--primary); }
+  .hub-newtab{ margin-left:auto; font-size:12px; padding:12px 14px; color:var(--accent); text-decoration:none; font-weight:600; white-space:nowrap; }
+  .hub-newtab:hover{ text-decoration:underline; }
+  .hub-body{ flex:1; position:relative; background:#fff; }
+  .hub-frame{ position:absolute; inset:0; width:100%; height:100%; border:none; }
+
+  /* Fallback do PDF (no celular o PDF abre melhor em tela cheia) */
+  .hub-fallback{ position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:26px; gap:14px; background:#fff; }
+  .hub-fallback.show{ display:flex; }
+  .hub-fallback .fb-icon{ font-size:54px; }
+  .hub-fallback p{ color:var(--muted); font-size:14px; margin:0; max-width:320px; line-height:1.5; }
+  .hub-fallback .fb-btn{ background:var(--primary); color:#fff; text-decoration:none; font-weight:700; font-size:15px; padding:14px 26px; border-radius:10px; }
+  .hub-fallback .fb-btn:active{ background:var(--accent); }
+  .hub-fallback .fb-sub{ font-size:12px; color:#b79aa6; }
+
+  /* ===== Responsivo / mobile ===== */
+  @media (max-width:600px){
+    body{ padding:14px; }
+    h1{ font-size:20px; }
+    .subtitle{ font-size:12.5px; }
+    .search{ font-size:16px; padding:11px 14px; }   /* 16px evita zoom automático no iOS */
+    .chips{ gap:6px; margin-bottom:16px; }
+    .chip{ font-size:12px; padding:6px 11px; }
+    .fase-title{ padding:14px 16px; font-size:15px; }
+    .sp-card{ margin:12px 12px; padding:14px 15px; }
+    .sp-title{ font-size:13px; }
+    .sp-kw{ font-size:11px; }
+    .actions{ gap:10px; }
+    .btn-open{ width:100%; padding:13px; font-size:14.5px; }   /* alvo de toque confortável */
+    /* Barra do hub: voltar na 1ª linha, título embaixo */
+    .hub-bar{ padding:8px 10px; gap:8px; }
+    .hub-title{ order:2; flex-basis:100%; font-size:13px; }
+    .hub-tab{ padding:13px 13px; font-size:13.5px; }
+    .hub-newtab{ padding:13px 10px; font-size:11.5px; }
+  }
 </style>
 </head>
 <body>
@@ -106,6 +165,24 @@
   </div>
 </div>
 
+<!-- Hub da SP (aberto ao clicar em "Abrir") -->
+<div class="hub" id="hub">
+  <div class="hub-bar">
+    <button class="hub-back" id="hubBack">← Voltar ao painel</button>
+    <div class="hub-title" id="hubTitle"></div>
+  </div>
+  <div class="hub-tabs" id="hubTabs"></div>
+  <div class="hub-body">
+    <iframe class="hub-frame" id="hubFrame" title="Material da SP"></iframe>
+    <div class="hub-fallback" id="hubFallback">
+      <div class="fb-icon">📄</div>
+      <p>No celular, o resumo em PDF abre melhor em tela cheia.</p>
+      <a class="fb-btn" href="#" target="_blank" rel="noopener">Abrir resumo em PDF</a>
+      <p class="fb-sub">(abre em uma nova aba)</p>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    COMO ADICIONAR UMA NOVA SP:
@@ -117,13 +194,15 @@
      data       -> data da aula (ex.: "4 mar 2026") ou "" se não tiver
      keywords   -> palavras-chave (usadas na busca)
      resumo / flashcards / anki / quiz -> caminho relativo do arquivo,
-        ou null se ainda não existir (o botão aparece desabilitado).
+        ou null se ainda não existir (a aba aparece desabilitada).
 
    Estrutura no repositório (tudo na raiz, sem subpastas):
      index.html
      SP1.1_3aFase_Resumo.pdf / _Flashcards.html / _Anki.txt / _Quiz.html
      ...
    As SPs são ordenadas automaticamente pelo número.
+   Ao clicar em "Abrir", a SP abre em abas (Resumo / Flashcards / Quiz)
+   dentro do próprio painel.
    ============================================================ */
 
 const DATA = [
@@ -321,11 +400,7 @@ DATA.forEach(f => f.sps.sort((a,b) => spValue(a.num) - spValue(b.num)));
 // Lista de disciplinas únicas (para os chips)
 const disciplinas = [...new Set(DATA.flatMap(f => f.sps.map(s => s.disciplina).filter(Boolean)))].sort();
 
-function linkOrDisabled(path, label, icon){
-  if(!path) return `<a class="missing" href="#">${icon} ${label}</a>`;
-  return `<a href="${path}" target="_blank" rel="noopener">${icon} ${label}</a>`;
-}
-
+// ================= FILTRO / BUSCA =================
 function matches(sp){
   const okDisc = activeDisc === "Todas" || sp.disciplina === activeDisc;
   const hay = `${sp.num} ${sp.titulo} ${sp.keywords} ${sp.disciplina} ${sp.data}`.toLowerCase();
@@ -386,12 +461,11 @@ function render(){
           <div class="sp-meta">${discBadge}${dateBadge}</div>
         </div>
         <div class="sp-kw">${sp.keywords}</div>
-        <div class="links">
-          ${linkOrDisabled(sp.resumo, 'Resumo', '📄')}
-          ${linkOrDisabled(sp.flashcards, 'Flashcards', '🃏')}
-          ${linkOrDisabled(sp.quiz, 'Quiz', '📝')}
+        <div class="actions">
+          <button class="btn-open">▸ Abrir SP</button>
         </div>
       `;
+      card.querySelector('.btn-open').addEventListener('click', () => openHub(faseGroup.fase, sp));
       details.appendChild(card);
     });
 
@@ -401,6 +475,80 @@ function render(){
   document.getElementById('emptyMsg').classList.toggle('show', !anyVisible);
 }
 
+// ================= HUB (abas Resumo/Flashcards/Quiz) =================
+const hub = document.getElementById('hub');
+const hubFrame = document.getElementById('hubFrame');
+let currentTab = null;
+let currentTabs = [];
+
+function openHub(fase, sp){
+  currentTabs = [
+    { id:'resumo', label:'📄 Resumo', file: sp.resumo },
+    { id:'flashcards', label:'🃏 Flashcards', file: sp.flashcards },
+    { id:'quiz', label:'📝 Quiz', file: sp.quiz }
+  ].filter(t => t.file);
+
+  document.getElementById('hubTitle').innerHTML = `${sp.num} — ${sp.titulo}<small>${fase} · ${sp.disciplina || ''}</small>`;
+  renderHubTabs();
+  const first = currentTabs.find(t => t.id === 'resumo') || currentTabs[0];
+  if(first) selectTab(first.id);
+
+  hub.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeHub(){
+  hub.classList.remove('open');
+  hubFrame.src = 'about:blank';
+  document.body.style.overflow = '';
+}
+
+function renderHubTabs(){
+  const wrap = document.getElementById('hubTabs');
+  wrap.innerHTML = '';
+  currentTabs.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'hub-tab' + (t.id === currentTab ? ' active' : '');
+    b.innerHTML = t.label;
+    b.addEventListener('click', () => selectTab(t.id));
+    wrap.appendChild(b);
+  });
+  const link = document.createElement('a');
+  link.className = 'hub-newtab';
+  link.target = '_blank'; link.rel = 'noopener';
+  const cur = currentTabs.find(t => t.id === currentTab);
+  link.href = cur ? cur.file : '#';
+  link.textContent = 'abrir em nova aba ↗';
+  wrap.appendChild(link);
+}
+
+// Em telas pequenas o PDF costuma não renderizar dentro de iframe; usamos um botão.
+function pdfNeedsFallback(file){
+  return /\.pdf(\?|$)/i.test(file) && window.innerWidth <= 760;
+}
+
+function selectTab(id){
+  const tab = currentTabs.find(t => t.id === id);
+  if(!tab) return;
+  currentTab = id;
+  renderHubTabs();
+  const fb = document.getElementById('hubFallback');
+  if(pdfNeedsFallback(tab.file)){
+    hubFrame.style.display = 'none';
+    hubFrame.src = 'about:blank';
+    fb.querySelector('.fb-btn').href = tab.file;
+    fb.classList.add('show');
+  } else {
+    fb.classList.remove('show');
+    hubFrame.style.display = '';
+    hubFrame.src = tab.file;
+  }
+}
+
+document.getElementById('hubBack').addEventListener('click', closeHub);
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && hub.classList.contains('open')) closeHub(); });
+
+// ================= BUSCA =================
 document.getElementById('searchBox').addEventListener('input', (e) => {
   searchTerm = e.target.value.trim().toLowerCase();
   render();
