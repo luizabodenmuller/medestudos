@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulado CT2 — SP 2.1 a 2.4</title>
+<style>
+  :root { --primary:#7a1f3d; --accent:#a83a63; --ok:#1e8e5a; --bad:#c0392b; --bg:#faf7f8; --muted:#8a8a8a; --border:#ead5de; }
+  * { box-sizing:border-box; }
+  body { font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--bg); margin:0; padding:20px; color:#1a1a1a; }
+  header { text-align:center; margin-bottom:18px; }
+  header h1 { color:var(--primary); margin-bottom:2px; font-size:20px; }
+  header p { color:#777; margin-top:0; font-size:13px; }
+  .wrap { max-width:720px; margin:0 auto; }
+  .progress-bar { width:100%; height:8px; background:#f0dbe3; border-radius:4px; overflow:hidden; margin-bottom:20px; }
+  .progress-fill { height:100%; background:var(--primary); width:0%; transition:width .3s; }
+  .card { background:#fff; border-radius:12px; padding:22px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:16px; }
+  .setup h2 { color:var(--primary); font-size:17px; margin:0 0 6px; }
+  .setup p { font-size:13.5px; color:#555; line-height:1.5; }
+  .setup .srcs { font-size:12.5px; color:#8a7a82; margin:10px 0 18px; }
+  .count-opts { display:flex; flex-wrap:wrap; gap:10px; }
+  .count-btn { flex:1; min-width:90px; border:2px solid var(--primary); background:#fff; color:var(--primary);
+    font-family:inherit; font-size:15px; font-weight:700; padding:14px 10px; border-radius:10px; cursor:pointer; transition:.15s; }
+  .count-btn:hover { background:var(--primary); color:#fff; }
+  .loading, .errbox { text-align:center; color:var(--muted); font-size:14px; padding:30px; }
+  .errbox { color:var(--bad); }
+  .q-counter { font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:4px; }
+  .q-src { display:inline-block; font-size:10.5px; font-weight:700; color:#fff; background:var(--accent); padding:2px 9px; border-radius:10px; margin-bottom:10px; }
+  .q-text { font-size:15px; margin-bottom:14px; line-height:1.4; }
+  .option { display:block; width:100%; text-align:left; background:#faf7f8; border:1px solid #e6c9d3; border-radius:8px; padding:11px 14px; margin-bottom:8px; font-size:13.5px; cursor:pointer; transition:all .15s; }
+  .option:hover:not(.answered) { background:#f7ecf0; }
+  .option.correct { background:#e3f6ea; border-color:var(--ok); color:#145c38; font-weight:bold; }
+  .option.incorrect { background:#fbe9e7; border-color:var(--bad); color:#7c241a; font-weight:bold; }
+  .option.disabled { cursor:default; }
+  .feedback { margin-top:12px; padding:10px 14px; border-radius:8px; font-size:13px; line-height:1.45; display:none; }
+  .feedback.show { display:block; }
+  .feedback.right { background:#e3f6ea; border-left:4px solid var(--ok); }
+  .feedback.wrong { background:#fbe9e7; border-left:4px solid var(--bad); }
+  .nav-btn { background:var(--primary); color:#fff; border:none; padding:11px 22px; border-radius:20px; font-size:13.5px; cursor:pointer; float:right; margin-top:6px; font-family:inherit; }
+  .nav-btn:disabled { background:#d9b3c0; cursor:default; }
+  .result-card { text-align:center; }
+  .result-score { font-size:42px; color:var(--primary); font-weight:bold; margin-bottom:6px; }
+  .result-msg { font-size:14px; color:#444; margin-bottom:18px; }
+  .restart-btn { background:var(--primary); color:#fff; border:none; padding:11px 24px; border-radius:20px; font-size:13.5px; cursor:pointer; font-family:inherit; }
+  footer { text-align:center; margin-top:24px; font-size:11px; color:#888; }
+  @media (max-width:600px){ body{padding:14px;} .card{padding:16px;} .q-text{font-size:14.5px;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Simulado CT2 — SP 2.1 a 2.4</h1>
+  <p>Complexo Temático 2 · Fisiologia Sensorial · 3ª Fase</p>
+</header>
+<div class="wrap">
+  <div class="progress-bar" id="pbar" style="display:none;"><div class="progress-fill" id="progressFill"></div></div>
+  <div id="app">
+    <div class="card loading" id="loading">Carregando as questões das SPs…</div>
+  </div>
+</div>
+<footer>Simulado gerado a partir dos quizzes individuais das SPs. Questões embaralhadas a cada tentativa.</footer>
+
+<script>
+const SOURCES = [
+  {sp:"SP 2.1", file:"SP2.1_3aFase_Quiz.html"},
+  {sp:"SP 2.2", file:"SP2.2_3aFase_Quiz.html"},
+  {sp:"SP 2.3", file:"SP2.3_3aFase_Quiz.html"},
+  {sp:"SP 2.4", file:"SP2.4_3aFase_Quiz.html"}
+];
+
+let POOL = [];        // todas as questões (com .sp)
+let questions = [];   // questões da rodada atual
+let current = 0, score = 0, answered = false;
+
+function extractQuestions(txt){
+  const s = txt.indexOf('const questions');
+  if(s < 0) return [];
+  const lc = txt.indexOf('let current', s);
+  const open = txt.indexOf('[', s);
+  const close = txt.lastIndexOf('];', lc);
+  if(open < 0 || close < 0) return [];
+  try { return eval('(' + txt.slice(open, close+1) + ')'); }
+  catch(e){ return []; }
+}
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+async function loadAll(){
+  try{
+    const results = await Promise.all(SOURCES.map(src =>
+      fetch(src.file).then(r => { if(!r.ok) throw new Error(src.file); return r.text(); })
+        .then(txt => extractQuestions(txt).map(q => Object.assign({}, q, { sp: src.sp })))
+        .catch(() => [])
+    ));
+    POOL = results.flat();
+    if(POOL.length === 0){
+      document.getElementById('app').innerHTML =
+        '<div class="card errbox">Não foi possível carregar as questões.<br>Este simulado precisa ser aberto pelo site publicado (GitHub Pages), não por um arquivo aberto direto no computador.</div>';
+      return;
+    }
+    renderSetup();
+  }catch(e){
+    document.getElementById('app').innerHTML =
+      '<div class="card errbox">Não foi possível carregar as questões. Abra pelo site publicado (GitHub Pages).</div>';
+  }
+}
+
+function renderSetup(){
+  const total = POOL.length;
+  const counts = [20, 40].filter(n => n < total);
+  const btns = counts.map(n => `<button class="count-btn" data-n="${n}">${n} questões</button>`).join('');
+  const srcList = SOURCES.map(s => s.sp).join(' · ');
+  document.getElementById('app').innerHTML = `
+    <div class="card setup">
+      <h2>Simulado combinado</h2>
+      <p>Reúne as questões de várias SPs em um só teste, com as perguntas embaralhadas. Feedback é mostrado a cada resposta.</p>
+      <div class="srcs">📚 SPs incluídas: ${srcList}<br>Total disponível: <b>${total}</b> questões.</div>
+      <div class="count-opts">
+        ${btns}
+        <button class="count-btn" data-n="all">Todas (${total})</button>
+      </div>
+    </div>`;
+  document.querySelectorAll('.count-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      const n = b.dataset.n === 'all' ? total : parseInt(b.dataset.n,10);
+      start(n);
+    });
+  });
+}
+
+function start(n){
+  questions = shuffle(POOL.slice()).slice(0, n);
+  current = 0; score = 0;
+  document.getElementById('pbar').style.display = '';
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const app = document.getElementById('app');
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = `${(current/questions.length)*100}%`;
+  answered = false;
+  app.innerHTML = `
+    <div class="card">
+      <div class="q-counter">Questão ${current+1} de ${questions.length}</div>
+      <div class="q-src">${q.sp}</div>
+      <div class="q-text">${q.q}</div>
+      <div id="options"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="nav-btn" id="nextBtn" disabled>${current === questions.length-1 ? 'Ver resultado' : 'Próxima'}</button>
+      <div style="clear:both;"></div>
+    </div>`;
+  const optsWrap = document.getElementById('options');
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = opt;
+    btn.addEventListener('click', () => selectOption(i));
+    optsWrap.appendChild(btn);
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    current++;
+    if(current < questions.length) renderQuestion(); else showResult();
+  });
+}
+
+function selectOption(i){
+  if(answered) return;
+  answered = true;
+  const q = questions[current];
+  document.querySelectorAll('.option').forEach((btn, idx) => {
+    btn.classList.add('disabled','answered');
+    if(idx === q.correct) btn.classList.add('correct');
+    else if(idx === i) btn.classList.add('incorrect');
+  });
+  const fb = document.getElementById('feedback');
+  fb.classList.add('show');
+  if(i === q.correct){ score++; fb.classList.add('right'); fb.innerHTML = `<b>Correto!</b> ${q.explain}`; }
+  else { fb.classList.add('wrong'); fb.innerHTML = `<b>Incorreto.</b> ${q.explain}`; }
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function showResult(){
+  document.getElementById('progressFill').style.width = '100%';
+  const pct = Math.round((score/questions.length)*100);
+  let msg = pct>=90 ? "Excelente domínio do conteúdo!" : pct>=70 ? "Bom desempenho — revise os pontos que errou." : pct>=50 ? "Desempenho razoável — vale revisar os resumos." : "Recomenda-se revisar o material com atenção.";
+  document.getElementById('app').innerHTML = `
+    <div class="card result-card">
+      <div class="result-score">${score} / ${questions.length}</div>
+      <div class="result-msg">${pct}% de acerto — ${msg}</div>
+      <button class="restart-btn" id="restartBtn">Novo simulado</button>
+    </div>`;
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    document.getElementById('pbar').style.display = 'none';
+    renderSetup();
+  });
+}
+
+loadAll();
+</script>
+</body>
+</html>

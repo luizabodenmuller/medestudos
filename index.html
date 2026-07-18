@@ -85,6 +85,13 @@
   }
   .btn-open:hover{ background:var(--accent); }
 
+  /* Faixa de simulados (por bloco de SPs) */
+  .sim-bar{ margin:12px 18px 2px; padding:12px 14px; background:linear-gradient(180deg,#fbeef3,#f6e0ea); border:1px solid var(--primary-light); border-radius:12px; }
+  .sim-title{ display:block; font-size:12.5px; font-weight:700; color:var(--primary); margin-bottom:9px; }
+  .sim-btns{ display:flex; flex-wrap:wrap; gap:8px; }
+  .sim-btn{ cursor:pointer; font-family:inherit; font-size:12.5px; font-weight:700; padding:9px 14px; border-radius:8px; background:#fff; color:var(--primary); border:1.5px solid var(--primary); transition:.15s; }
+  .sim-btn:hover{ background:var(--primary); color:#fff; }
+
   .empty-msg{ text-align:center; color:var(--muted); font-size:14px; padding:34px; display:none; }
   .empty-msg.show{ display:block; }
   .footer-note{ margin-top:30px; font-size:11.5px; color:#bbb; text-align:center; }
@@ -386,6 +393,16 @@ const DATA = [
   // Para uma nova fase, acrescente outro bloco: { fase:"4ª Fase", sps:[ ... ] }
 ];
 
+// Simulados combinados por bloco de SPs (aparecem no topo da fase).
+// Cada simulado é um arquivo .html que junta as questões dos quizzes das SPs do bloco.
+const SIMULADOS = {
+  "3ª Fase": [
+    { label: "CT1", subtitle: "Complexo Temático 1 · SP 1.1–1.4 · Pediatria e Saúde do Adolescente", file: "CT1_3aFase_Simulado.html" },
+    { label: "CT2", subtitle: "Complexo Temático 2 · SP 2.1–2.4 · Fisiologia Sensorial", file: "CT2_3aFase_Simulado.html" },
+    { label: "CT3", subtitle: "Complexo Temático 3 · SP 3.1–3.4 · Geriatria", file: "CT3_3aFase_Simulado.html" }
+  ]
+};
+
 // ---- Estado dos filtros ----
 let activeDisc = "Todas";
 let searchTerm = "";
@@ -447,6 +464,20 @@ function render(){
     summary.innerHTML = `${faseGroup.fase}<span class="fase-count">(${countTxt})</span>`;
     details.appendChild(summary);
 
+    // Faixa de simulados por bloco (se houver para esta fase)
+    const sims = SIMULADOS[faseGroup.fase];
+    if(sims && sims.length){
+      const bar = document.createElement('div');
+      bar.className = 'sim-bar';
+      bar.innerHTML = `<span class="sim-title">🎯 Simulados por bloco (questões combinadas e embaralhadas)</span>
+        <div class="sim-btns">${sims.map((s,i)=>`<button class="sim-btn" data-i="${i}">▸ ${s.label}</button>`).join('')}</div>`;
+      bar.querySelectorAll('.sim-btn').forEach(btn => {
+        const s = sims[parseInt(btn.dataset.i,10)];
+        btn.addEventListener('click', () => openSimulado(s.label, s.subtitle, s.file));
+      });
+      details.appendChild(bar);
+    }
+
     visibleSps.forEach(sp => {
       const card = document.createElement('div');
       card.className = 'sp-card';
@@ -481,20 +512,34 @@ const hubFrame = document.getElementById('hubFrame');
 let currentTab = null;
 let currentTabs = [];
 
-function openHub(fase, sp){
-  currentTabs = [
-    { id:'resumo', label:'📄 Resumo', file: sp.resumo },
-    { id:'flashcards', label:'🃏 Flashcards', file: sp.flashcards },
-    { id:'quiz', label:'📝 Quiz', file: sp.quiz }
-  ].filter(t => t.file);
-
-  document.getElementById('hubTitle').innerHTML = `${sp.num} — ${sp.titulo}<small>${fase} · ${sp.disciplina || ''}</small>`;
+function openInHub(titleHTML, tabs, preferId){
+  currentTabs = tabs.filter(t => t.file);
+  document.getElementById('hubTitle').innerHTML = titleHTML;
   renderHubTabs();
-  const first = currentTabs.find(t => t.id === 'resumo') || currentTabs[0];
+  const first = currentTabs.find(t => t.id === preferId) || currentTabs[0];
   if(first) selectTab(first.id);
-
   hub.classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+function openHub(fase, sp){
+  openInHub(
+    `${sp.num} — ${sp.titulo}<small>${fase} · ${sp.disciplina || ''}</small>`,
+    [
+      { id:'resumo', label:'📄 Resumo', file: sp.resumo },
+      { id:'flashcards', label:'🃏 Flashcards', file: sp.flashcards },
+      { id:'quiz', label:'📝 Quiz', file: sp.quiz }
+    ],
+    'resumo'
+  );
+}
+
+function openSimulado(label, subtitle, file){
+  openInHub(
+    `🎯 Simulado ${label}<small>${subtitle}</small>`,
+    [ { id:'sim', label:'📝 Simulado', file: file } ],
+    'sim'
+  );
 }
 
 function closeHub(){
